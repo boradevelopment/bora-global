@@ -1,3 +1,3 @@
 # BORA Global
 ## BORA Global host files that are depended on many projects in BORA, for instance TypeDefinitions or contributing libraries.
-You'll locate assets, C++ Code and additional lib files that BORA projects may use.
+You'll locate assets, C++ Code and additional lib files that BORA projects may use...
