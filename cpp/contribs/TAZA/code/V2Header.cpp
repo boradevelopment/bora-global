@@ -294,11 +294,9 @@ bool V2Header::writeV2HeaderToFile(const V2Header& header, FILE* outputFile, std
     __int64 headerEnd = 0;
 
     // Mark the start of the V2Header
-#if WIN32
-    headerStart = _ftelli64(outputFile);
-#elif __linux__
-    headerStart = ftello64(outputFile);
-#endif
+    headerStart = ftellout(outputFile);
+
+
 
     // Serialize V2Header metadata
     fwrite(header.version.c_str(), sizeof(char), strlen(header.version.c_str()) + 1, outputFile);
@@ -341,13 +339,8 @@ bool V2Header::writeV2HeaderToFile(const V2Header& header, FILE* outputFile, std
     writeCustomVariables(outputFile, customVariables);
 
     // Mark the end of the V2Header
-#if WIN32
-    headerEnd = _ftelli64(outputFile);
-#elif __linux__
-    headerEnd = ftello64(outputFile);
-#endif
+    headerEnd = ftellout(outputFile);
 
-    
     // GO TO THE PADDING and overwrite it with the actual header start and header length
     
     // Move file pointer to start of second line (after warn)
@@ -639,9 +632,10 @@ void V2Header::logV2Header()
     std::time_t fileTime = std::time(nullptr);
 #if WIN32
     localtime_s(&fileTM, &fileTime);
-#elif __linux__
+#elif __linux__|| __APPLE__
     localtime_r(&fileTime, &fileTM);
 #endif
+
     std::streambuf* originalCout = std::cout.rdbuf();  // Save original cout buffer
 
     std::ostringstream oss;
@@ -660,7 +654,7 @@ void V2Header::logV2Header()
 
 #if WIN32
         localtime_s(&timeInfo, &creationDate);
-#elif __linux__
+#elif __linux__ || __APPLE__
         localtime_r(&creationDate, &timeInfo);
 #endif
 
@@ -687,7 +681,7 @@ void V2Header::logV2Header()
         localtime_s(&timeInfoCreate, &file.creationDate);
         localtime_s(&timeInfoModify, &file.modificationDate);
         localtime_s(&timeInfoAccess, &file.accessDate);
-#elif __linux__
+#elif __linux__ || __APPLE__
         localtime_r(&file.creationDate, &timeInfoCreate);
         localtime_r(&file.modificationDate, &timeInfoModify);
         localtime_r(&file.accessDate, &timeInfoAccess);

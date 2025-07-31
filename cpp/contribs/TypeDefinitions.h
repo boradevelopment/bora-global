@@ -8,6 +8,14 @@ typedef u8 byte;
 typedef signed long int __int64;
 #endif
 
+#if WIN32
+#define ftellout(out) _ftelli64(out);
+#elif __linux__
+#define ftellout(out) ftello64(out);
+#elif __APPLE__
+#define ftellout(out) ftello(out);
+#endif
+
 #include <vector>
 #include <string>
 #include <map>

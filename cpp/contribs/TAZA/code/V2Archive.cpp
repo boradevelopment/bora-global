@@ -26,11 +26,12 @@ int V2Archive::makeArchive()
 	std::string fulOut = output;
 	const std::string directoryPath = input;
 
-
 #if WIN32
     fopen_s(&outputFile, fulOut.c_str(), "wb");
 #elif __linux__
     outputFile = fopen64(fulOut.c_str(), "wb");
+#elif __APPLE__
+    outputFile = fopen(fulOut.c_str(), "wb");
 #endif
 
     if (outputFile == nullptr) {
@@ -237,6 +238,11 @@ V2Archive::V2Archive(std::string name, const std::string& path, const std::strin
     }
 #elif __linux__
     outputFile = fopen64(path.c_str(), "wb");
+    if (!outputFile) {
+        throw std::runtime_error("Failed to open archive file for writing.");
+    }
+#elif __APPLE__
+    outputFile = fopen(path.c_str(), "wb");
     if (!outputFile) {
         throw std::runtime_error("Failed to open archive file for writing.");
     }

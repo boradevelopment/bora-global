@@ -4,13 +4,7 @@
 
 #include "TAZALogger.h"
 
-#if WIN32
-#define ftellout(out) _ftelli64(out);
-#elif __linux__
-#define ftellout(out) ftello64(out);
-#elif __APPLE__
-#define ftellout(out) ftello(out);
-#endif
+
 
 
 std::mutex allC_mutex;
