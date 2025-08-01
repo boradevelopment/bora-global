@@ -4,7 +4,7 @@
 typedef unsigned int u32;
 typedef unsigned char u8;
 typedef u8 byte;
-#ifndef WIN32
+#if __linux__ || __APPLE__
 typedef signed long int __int64;
 #endif
 
