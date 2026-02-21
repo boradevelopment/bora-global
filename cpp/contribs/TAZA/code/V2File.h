@@ -8,8 +8,8 @@
 #include <cstdint>
 
 struct V2File {
-    std::string file = ""; // File name
-    std::string filePath = ""; // Path of file from original directory
+    std::wstring file = L""; // File name
+    std::wstring filePath = L""; // Path of file from original directory
     bool encrypted = false; // Was it encrypted or is it free?
     uint64_t lineStart = 0;  // Exact locations of where the file data inside the file is, this will allow easier compression and fast reading 
     uint64_t lineEnd = 0;  // Exact locations of where the file data inside the file is, this will allow easier compression and fast reading
@@ -17,7 +17,7 @@ struct V2File {
     std::time_t creationDate = 0;  // File creation date (timestamp)
     std::time_t modificationDate = 0; // Last modification date
     std::time_t accessDate = 0;       // Last access date
-    std::string compressionMethod = ""; // Compression method used (e.g., "zlib", "gzip")
+    std::wstring compressionMethod = L""; // Compression method used (e.g., "zlib", "gzip")
     size_t compressedSize = 0;        // Size of the file after compression
     size_t regularsize = 0; // size before compression
 
@@ -34,7 +34,7 @@ struct V2File {
     std::vector<size_t> encryptionChunkSizes; // List of chunk sizes in their real time file.
 
     // CUSTOM VARIABLES
-    std::unordered_map<std::string, std::variant<std::string, int, float, double, bool, uint64_t>> customVariables;
+    std::unordered_map<std::wstring, std::variant<std::string, std::wstring, int, float, double, bool, uint64_t>> customVariables;
 };
 
 #endif

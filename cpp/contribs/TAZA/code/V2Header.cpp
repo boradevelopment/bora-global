@@ -13,7 +13,7 @@
 namespace fs = std::filesystem;
 
 void writeCustomVariables(FILE* f,
-                          const std::unordered_map<std::string, std::variant<std::string, int, float, double, bool, uint64_t>>& vars)
+                          const std::unordered_map<std::wstring, std::variant<std::string, std::wstring, int, float, double, bool, uint64_t>>& vars)
 {
     // Write number of entries
     uint64_t count = vars.size();
@@ -21,9 +21,11 @@ void writeCustomVariables(FILE* f,
 
     for (const auto& [key, val] : vars) {
         // Write key length + key string
-        auto keyLen = static_cast<uint16_t>(key.size());
-        fwrite(&keyLen, sizeof(keyLen), 1, f);
-        fwrite(key.data(), 1, keyLen, f);
+
+        auto utf8Key = wstringToUtf8(key);
+        uint64_t keyLength = utf8Key.size();
+        fwrite(&keyLength, sizeof(keyLength), 1, f);
+        fwrite(utf8Key.data(), sizeof(char), keyLength, f);
 
         // Write type + value
         if (std::holds_alternative<std::string>(val)) {
@@ -35,7 +37,8 @@ void writeCustomVariables(FILE* f,
             fwrite(&strLen, sizeof(strLen), 1, f);
             fwrite(s.data(), 1, strLen, f);
 
-        } else if (std::holds_alternative<int>(val)) {
+        }
+        else if (std::holds_alternative<int>(val)) {
             uint8_t typeId = 2;
             fwrite(&typeId, 1, 1, f);
             int v = std::get<int>(val);
@@ -65,14 +68,24 @@ void writeCustomVariables(FILE* f,
             uint64_t v = std::get<uint64_t>(val);
             fwrite(&v, sizeof(v), 1, f);
 
-        } else {
+        } if (std::holds_alternative<std::wstring>(val)) {
+            uint8_t typeId = 7; // different type ID for wstring
+            fwrite(&typeId, 1, 1, f);
+
+            const std::wstring& ws = std::get<std::wstring>(val);
+            auto utf8S = wstringToUtf8(ws);
+            uint64_t strLen = utf8S.size();
+            fwrite(&strLen, sizeof(strLen), 1, f);
+            fwrite(utf8S.data(), sizeof(char), strLen, f);
+        }
+        else {
             // Unknown type [I'll leave it as is since that isn't possible]
         }
     }
 }
 
 void readCustomVariables(std::ifstream& f,
-                         std::unordered_map<std::string, std::variant<std::string, int, float, double, bool, uint64_t>>& vars)
+                         std::unordered_map<std::wstring, std::variant<std::string, std::wstring, int, float, double, bool, uint64_t>>& vars)
 {
     vars.clear();
 
@@ -80,11 +93,13 @@ void readCustomVariables(std::ifstream& f,
     f.read(reinterpret_cast<char*>(&count), sizeof(count));
 
     for (uint64_t i = 0; i < count; ++i) {
-        uint16_t keyLen = 0;
-        f.read(reinterpret_cast<char*>(&keyLen), sizeof(keyLen));
 
-        std::string key(keyLen, '\0');
-        f.read(&key[0], keyLen);
+        uint64_t keyLen = 0;
+        f.read(reinterpret_cast<char*>(&keyLen), sizeof(keyLen));
+        std::string utf8Key(keyLen, '\0');
+        f.read(&utf8Key[0], keyLen);
+
+        auto key = utf8ToWstring(utf8Key);
 
         uint8_t typeId = 0;
         f.read(reinterpret_cast<char*>(&typeId), 1);
@@ -128,6 +143,15 @@ void readCustomVariables(std::ifstream& f,
                 vars[key] = val;
                 break;
             }
+            case 7: { // string
+                uint64_t strLen = 0;
+                f.read(reinterpret_cast<char*>(&strLen), sizeof(strLen));
+                std::string valUTF8(strLen, '\0');
+                f.read(&valUTF8[0], strLen);
+                auto val = utf8ToWstring(valUTF8);
+                vars[key] = val;
+                break;
+            }
             default:
                 // Unknown type
                 break;
@@ -136,10 +160,10 @@ void readCustomVariables(std::ifstream& f,
 }
 
 
-std::string formatBytes(size_t bytes) {
-    const std::vector<std::string> units = { "Bytes", "KB", "MB", "GB", "TB", "PB", "EB", "ZB", "YB" };
+std::wstring formatBytes(size_t bytes) {
+    const std::vector<std::wstring> units = { L"Bytes", L"KB", L"MB", L"GB", L"TB", L"PB", L"EB", L"ZB", L"YB" };
 
-    if (bytes == 0) return "0 Bytes";
+    if (bytes == 0) return L"0 Bytes";
 
     size_t unitIndex = 0;
     double formattedSize = static_cast<double>(bytes);
@@ -151,14 +175,14 @@ std::string formatBytes(size_t bytes) {
     }
 
     // Prepare the result in a readable format
-    std::ostringstream oss;
+    std::wstringstream oss;
     oss.precision(2);
     oss << std::fixed << formattedSize << " " << units[unitIndex];
 
     return oss.str();
 }
 
-void createDirectories(const std::string& path) {
+void createDirectories(const std::wstring& path) {
     try {
         // Convert the path to a filesystem path object
         fs::path p(path);
@@ -186,43 +210,49 @@ void createDirectories(const std::string& path) {
 }
 
 
-void readString(std::ifstream& file, std::string& str) {
+void readString(std::ifstream& file, std::wstring& str) {
+    std::string utf8Str;
     char ch;
-    str.clear();
+    utf8Str.clear();
     while (file.get(ch) && ch != '\0') {
-        str.push_back(ch);
+        utf8Str.push_back(ch);
     }
+    str = utf8ToWstring(utf8Str);
 }
 
-void readLengthPrefixedString(std::ifstream& file, std::string& str) {
+void readLengthPrefixedString(std::ifstream& file, std::wstring& str) {
+    std::string utf8Str;
     size_t length;
     file.read(reinterpret_cast<char*>(&length), sizeof(length));
     if (length > 0) {
-        str.resize(length);
-        file.read(&str[0], length);
-    }
-    else {
-        str.clear();
+        utf8Str.resize(length);
+        file.read(reinterpret_cast<char*>(&utf8Str[0]), length * sizeof(char));
+        str = utf8ToWstring(utf8Str);
+    } else {
+        utf8Str.clear();
     }
 }
 
 std::mutex fileMutex;  // Mutex to protect file access
 
 
-void writeFilePart(const std::string& fileName, const V2File& v2File, FILE* outputFile) {
+void writeFilePart(const std::wstring& fileName, const V2File& v2File, FILE* outputFile) {
     std::lock_guard<std::mutex> guard(fileMutex);  // Lock the mutex to ensure only one thread writes at a time
 
-    size_t fileNameLength = fileName.size();
+    std::string fileNameLengthUTF8 = wstringToUtf8(fileName);
+    size_t fileNameLength = fileNameLengthUTF8.size();
     fwrite(&fileNameLength, sizeof(fileNameLength), 1, outputFile);
-    fwrite(fileName.data(), sizeof(char), fileNameLength, outputFile);
+    fwrite(fileNameLengthUTF8.data(), sizeof(char), fileNameLength, outputFile);
 
-    size_t fileLength = v2File.file.size();
+    std::string fileUTF8 = wstringToUtf8(v2File.file);
+    size_t fileLength = fileUTF8.size();
     fwrite(&fileLength, sizeof(fileLength), 1, outputFile);
-    fwrite(v2File.file.data(), sizeof(char), fileLength, outputFile);
+    fwrite(fileUTF8.data(), sizeof(char), fileLength, outputFile);
 
+    std::string filePathUTF8 = wstringToUtf8(v2File.filePath);
     size_t filePathLength = v2File.filePath.size();
     fwrite(&filePathLength, sizeof(filePathLength), 1, outputFile);
-    fwrite(v2File.filePath.data(), sizeof(char), filePathLength, outputFile);
+    fwrite(filePathUTF8.data(), sizeof(char), filePathLength, outputFile);
 
     fwrite(&v2File.encrypted, sizeof(v2File.encrypted), 1, outputFile);
     fwrite(&v2File.lineStart, sizeof(v2File.lineStart), 1, outputFile);
@@ -232,9 +262,10 @@ void writeFilePart(const std::string& fileName, const V2File& v2File, FILE* outp
     fwrite(&v2File.modificationDate, sizeof(v2File.modificationDate), 1, outputFile);
     fwrite(&v2File.accessDate, sizeof(v2File.accessDate), 1, outputFile);
 
-    size_t compressionMethodLength = v2File.compressionMethod.size();
+    std::string compressionMethodUTF8 = wstringToUtf8(v2File.compressionMethod);
+    size_t compressionMethodLength = compressionMethodUTF8.size();
     fwrite(&compressionMethodLength, sizeof(compressionMethodLength), 1, outputFile);
-    fwrite(v2File.compressionMethod.data(), sizeof(char), compressionMethodLength, outputFile);
+    fwrite(compressionMethodUTF8.data(), sizeof(char), compressionMethodLength, outputFile);
 
     fwrite(&v2File.compressedSize, sizeof(v2File.compressedSize), 1, outputFile);
     fwrite(&v2File.regularsize, sizeof(v2File.regularsize), 1, outputFile);
@@ -258,8 +289,8 @@ void writeFilePart(const std::string& fileName, const V2File& v2File, FILE* outp
 }
 
 
-std::vector<std::string> V2Header::getPathesInDirectory(std::string directoryPath, bool isRecursive) const {
-    std::vector<std::string> paths;
+std::vector<std::wstring> V2Header::getPathesInDirectory(std::wstring directoryPath, bool isRecursive) const {
+    std::vector<std::wstring> paths;
 
     // Normalize directory path to ensure it ends with a slash
     if (!directoryPath.empty() && directoryPath.back() != '/') {
@@ -269,7 +300,7 @@ std::vector<std::string> V2Header::getPathesInDirectory(std::string directoryPat
     for (const auto& [filePath, file] : files) {
         // Check if the file path starts with the specified directory
         if (filePath.rfind(directoryPath, 0) == 0) {
-            std::string relativePath = filePath.substr(directoryPath.size());
+            std::wstring relativePath = filePath.substr(directoryPath.size());
 
             // For non-recursive mode, skip paths containing further slashes
             if (!isRecursive && relativePath.find('/') != std::string::npos) {
@@ -300,27 +331,30 @@ bool V2Header::writeV2HeaderToFile(const V2Header& header, FILE* outputFile, std
 
 
     // Serialize V2Header metadata
-    fwrite(header.version.c_str(), sizeof(char), strlen(header.version.c_str()) + 1, outputFile);
-    fwrite(header.file.c_str(), sizeof(char), strlen(header.file.c_str()) + 1, outputFile);
-    fwrite(header.warn.c_str(), sizeof(char), strlen(header.warn.c_str())+ 1, outputFile);
+    fwrite(wstringToUtf8(header.version).c_str(), sizeof(char), strlen(wstringToUtf8(header.version).c_str()) + 1, outputFile);
+    fwrite(wstringToUtf8(header.file).c_str(), sizeof(char), strlen(wstringToUtf8(header.file).c_str()) + 1, outputFile);
+    fwrite(wstringToUtf8(header.warn).c_str(), sizeof(char), strlen(wstringToUtf8(header.warn).c_str())+ 1, outputFile);
     fwrite(&header.encrypted, sizeof(header.encrypted), 1, outputFile);
     fwrite(&header.size, sizeof(uint64_t), 1, outputFile);
     fwrite(&header.sizeRegular, sizeof(uint64_t), 1, outputFile);
     fwrite(&header.creationDate, sizeof(header.creationDate), 1, outputFile);
 
-    size_t authorLength = header.author.size();
+    auto authorUTF8 = wstringToUtf8(header.author);
+    size_t authorLength = authorUTF8.size();
     fwrite(&authorLength, sizeof(authorLength), 1, outputFile);
-    fwrite(header.author.data(), sizeof(char), authorLength, outputFile);
+    fwrite(authorUTF8.data(), sizeof(char), authorLength, outputFile);
 
-    size_t commentLength = header.comment.size();
+    auto commentUTF8 = wstringToUtf8(header.comment);
+    size_t commentLength = commentUTF8.size();
     fwrite(&commentLength, sizeof(commentLength), 1, outputFile);
-    fwrite(header.comment.data(), sizeof(char), commentLength, outputFile);
+    fwrite(commentUTF8.data(), sizeof(char), commentLength, outputFile);
 
     fwrite(&header.totalFiles, sizeof(header.totalFiles), 1, outputFile);
 
-    size_t compressionMethodLength = header.compressionMethod.size();
+    auto compressionMethodUTF8 = wstringToUtf8(header.compressionMethod);
+    size_t compressionMethodLength = compressionMethodUTF8.size();
     fwrite(&compressionMethodLength, sizeof(compressionMethodLength), 1, outputFile);
-    fwrite(header.compressionMethod.data(), sizeof(char), compressionMethodLength, outputFile);
+    fwrite(compressionMethodUTF8.data(), sizeof(char), compressionMethodLength, outputFile);
 
     // Serialize each V2File in the map
     size_t filesCount = header.files.size();
@@ -345,35 +379,14 @@ bool V2Header::writeV2HeaderToFile(const V2Header& header, FILE* outputFile, std
     // GO TO THE PADDING and overwrite it with the actual header start and header length
     
     // Move file pointer to start of second line (after warn)
-    fseek(outputFile, strlen(this->warn.c_str()), SEEK_SET);
+    fseek(outputFile, strlen(wstringToUtf8(this->warn).c_str()), SEEK_SET);
 
     // Overwrite with actual start/end
     fprintf(outputFile, "#%020lld$%020lld\n", headerStart, headerEnd);
 
     fclose(outputFile);
 
-  
-
-    //std::vector<uint8_t> fileData = readFileMain(og); // Read file content into memory
-
-
-    //// Reopen in write mode to overwrite everything
-    //FILE* gfile;
-    //fopen_s(&gfile, og.c_str(), "wb");
-    //if (!gfile) {
-    //    perror("Failed to reopen file");
-    //    return false;
-    //}
-
-    //// Write the new lines first
-    //fwrite(header.warn.c_str(), sizeof(char), strlen(header.warn.c_str()), gfile);
-    //fprintf(gfile, "#%lld$%lld\n", headerStart, headerEnd);
-
-    //// Write back the original content
-    //fwrite(fileData.data(), 1, fileData.size(), gfile);
-    //fclose(gfile);
-
-
+    std::filesystem::rename(header.tempPath, header.filePath);
 
     return true;
 #endif
@@ -420,7 +433,7 @@ bool V2Header::readV2HeaderFromFile(std::ifstream& file, __int64 startPos, __int
         file.read(reinterpret_cast<char*>(&filesCount), sizeof(filesCount));
 
         for (size_t i = 0; i < filesCount; i++) {
-            std::string fileName;
+            std::wstring fileName;
             readLengthPrefixedString(file, fileName);
 
             V2File v2File;
@@ -524,10 +537,14 @@ bool V2Header::readV2FileFromFile(std::ifstream& file, V2File v2file, const char
             decompress_memoryV(buffer, v2file.regularsize);
         }
 
-        std::string opath = "TAZ_"+ this->file + "\\" + v2file.file;
+        std::wstring opath = L"TAZ_"+ this->file + L"\\" + v2file.file;
         createDirectories(opath);
 
-        std::ofstream outFile("./" + opath, std::ios::binary);
+#if WIN32
+         std::ofstream outFile(L"./" + opath, std::ios::binary);
+#else
+        std::ofstream outFile("./" + wstringToUtf8(opath), std::ios::binary);
+#endif
         if (!outFile.is_open()) {
             return false;
         }
@@ -637,19 +654,19 @@ void V2Header::logV2Header()
     localtime_r(&fileTime, &fileTM);
 #endif
 
-    std::streambuf* originalCout = std::cout.rdbuf();  // Save original cout buffer
+    auto originalCout = std::wcout.rdbuf();  // Save original cout buffer
 
     std::ostringstream oss;
     oss << "v2header." << std::put_time(&fileTM, "%Y-%m-%d_%H-%M-%S") << ".log";
 
-    std::ofstream logFile(oss.str(), std::ios::out | std::ios::trunc);
+    std::wofstream logFile(oss.str(), std::ios::out | std::ios::trunc);
     if (!logFile) {
         TAZA_LOG_ERROR("UNABLE TO OPEN LOG FILE");
     }
 
     if (logFile.is_open()) {
 
-        std::cout.rdbuf(logFile.rdbuf());  // Redirects std::cout to the log file
+        std::wcout.rdbuf(logFile.rdbuf());
 
         tm timeInfo;
 
@@ -659,20 +676,20 @@ void V2Header::logV2Header()
         localtime_r(&creationDate, &timeInfo);
 #endif
 
-    std::cout << "==== V2Header Metadata ====\n";
-    std::cout << "Version: " << version << "\n";
-    std::cout << "File Name: " << file << "\n";
-    std::cout << "Encrypted: " << (encrypted ? "Yes" : "No") << "\n";
-    std::cout << "Archive Size: " << formatBytes(size) << "\n";
-    std::cout << "Predicted Export Size [Regular Size of Archive]: " << formatBytes(sizeRegular) << "\n";
-    std::cout << "Creation Date: " << std::put_time(&timeInfo, "%Y-%m-%d %H:%M:%S") << "\n";
-    std::cout << "Author: " << author << "\n";
-    std::cout << "Comment: " << comment << "\n";
-    std::cout << "Total Files: " << totalFiles << "\n";
-    std::cout << "Compression Method: " << compressionMethod << "\n";
-    std::cout << "Warning: " << warn << "\n";
+    std::wcout << L"==== V2Header Metadata ====\n";
+    std::wcout << L"Version: " << version << "\n";
+    std::wcout << L"File Name: " << file << "\n";
+    std::wcout << L"Encrypted: " << (encrypted ? "Yes" : "No") << "\n";
+    std::wcout << L"Archive Size: " << formatBytes(size) << "\n";
+    std::wcout << L"Predicted Export Size [Regular Size of Archive]: " << formatBytes(sizeRegular) << "\n";
+    std::wcout << L"Creation Date: " << std::put_time(&timeInfo, L"%Y-%m-%d %H:%M:%S") << "\n";
+    std::wcout << L"Author: " << author << "\n";
+    std::wcout << L"Comment: " << comment << "\n";
+    std::wcout << L"Total Files: " << totalFiles << "\n";
+    std::wcout << L"Compression Method: " << compressionMethod << "\n";
+    std::wcout << L"Warning: " << warn << "\n";
 
-    std::cout << "\n==== Files Metadata ====\n";
+    std::wcout << "\n==== Files Metadata ====\n";
     for (const auto& [fileName, file] : files) {
 
         tm timeInfoCreate;
@@ -688,51 +705,51 @@ void V2Header::logV2Header()
         localtime_r(&file.accessDate, &timeInfoAccess);
 #endif
 
-        std::cout << "File: " << fileName << "\n";
-        std::cout << "  - Encrypted: " << (file.encrypted ? "Yes" : "No") << "\n";
-        std::cout << "  - Line Start: " << file.lineStart << "\n";
-        std::cout << "  - Line End: " << file.lineEnd << "\n";
-        std::cout << "  - Size: " << file.size << "\n";
-        std::cout << "  - Created: " << std::put_time(&timeInfoCreate, "%Y-%m-%d %H:%M:%S") << "\n";
-        std::cout << "  - Modified: " << std::put_time(&timeInfoModify, "%Y-%m-%d %H:%M:%S") << "\n";
-        std::cout << "  - Accessed: " << std::put_time(&timeInfoAccess, "%Y-%m-%d %H:%M:%S") << "\n";
-        std::cout << "  - Compression Method: " << file.compressionMethod << "\n";
-        std::cout << "  - Compressed Size: " << formatBytes(file.compressedSize) << "\n";
-        std::cout << "  - Regular Size: " << formatBytes(file.regularsize) << "\n";
+        std::wcout << L"File: " << fileName << "\n";
+        std::wcout << L"  - Encrypted: " << (file.encrypted ? "Yes" : "No") << "\n";
+        std::wcout << L"  - Line Start: " << file.lineStart << "\n";
+        std::wcout << L"  - Line End: " << file.lineEnd << "\n";
+        std::wcout << L"  - Size: " << file.size << "\n";
+        std::wcout << L"  - Created: " << std::put_time(&timeInfoCreate, L"%Y-%m-%d %H:%M:%S") << "\n";
+        std::wcout << L"  - Modified: " << std::put_time(&timeInfoModify, L"%Y-%m-%d %H:%M:%S") << "\n";
+        std::wcout << L"  - Accessed: " << std::put_time(&timeInfoAccess, L"%Y-%m-%d %H:%M:%S") << "\n";
+        std::wcout << L"  - Compression Method: " << file.compressionMethod << "\n";
+        std::wcout << L"  - Compressed Size: " << formatBytes(file.compressedSize) << "\n";
+        std::wcout << L"  - Regular Size: " << formatBytes(file.regularsize) << "\n";
 
         // Log compression chunking details if enabled
         if (file.isCompressionChunked) {
-            std::cout << "  - Compression Chunked: Yes\n";
-            std::cout << "  - Compression Chunk Size: " << formatBytes(file.compressionChunkSize) << "\n";
-            std::cout << "  - Number of Compression Chunks: " << file.compressionChunks << "\n";
-            std::cout << "  - Compression Chunk Sizes: \n";
+            std::wcout << "  - Compression Chunked: Yes\n";
+            std::wcout << "  - Compression Chunk Size: " << formatBytes(file.compressionChunkSize) << "\n";
+            std::wcout << "  - Number of Compression Chunks: " << file.compressionChunks << "\n";
+            std::wcout << "  - Compression Chunk Sizes: \n";
             for (size_t chunkSize : file.compressionChunksSizes) {
-                std::cout << "      " << formatBytes(chunkSize) << "\n";
+                std::wcout << "      " << formatBytes(chunkSize) << "\n";
             }
-            std::cout << "\n";
+            std::wcout << "\n";
         }
         else {
-            std::cout << "  - Compression Chunked: No\n";
+            std::wcout << "  - Compression Chunked: No\n";
         }
 
         // Log encryption chunking details if enabled
         if (file.isEncryptionChunked) {
-            std::cout << "  - Encryption Chunked: Yes\n";
-            std::cout << "  - Encryption Chunk Size: " << formatBytes(file.encryptionChunkSize) << "\n";
-            std::cout << "  - Number of Encryption Chunks: " << file.encryptionChunks << "\n";
-            std::cout << "  - Encryption Chunk Sizes: \n";
+            std::wcout << "  - Encryption Chunked: Yes\n";
+            std::wcout << "  - Encryption Chunk Size: " << formatBytes(file.encryptionChunkSize) << "\n";
+            std::wcout << "  - Number of Encryption Chunks: " << file.encryptionChunks << "\n";
+            std::wcout << "  - Encryption Chunk Sizes: \n";
             for (size_t chunkSize : file.encryptionChunkSizes) {
-                std::cout << "      " << formatBytes(chunkSize) << "\n";
+                std::wcout << "      " << formatBytes(chunkSize) << "\n";
             }
-            std::cout << "\n";
+            std::wcout << "\n";
         }
         else {
-            std::cout << "  - Encryption Chunked: No\n";
+            std::wcout << "  - Encryption Chunked: No\n";
         }
 
-        std::cout << "---------------------------\n";
+        std::wcout << "---------------------------\n";
     }
-    std::cout.rdbuf(originalCout);
+    std::wcout.rdbuf(originalCout);
     logFile.close();
     TAZA_LOG_NORMAL("V2 Header will be located at the executable directory!");
     }

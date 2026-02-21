@@ -8,7 +8,7 @@
 /// </summary>
 struct exportResult {
     int result = 0; // the final result
-    std::vector<std::string> resultVector; // The amount of files exported properly
+    std::vector<std::wstring> resultVector; // The amount of files exported properly
 };
 
 

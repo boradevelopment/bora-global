@@ -14,7 +14,7 @@
 
 extern std::mutex allC_mutex;
 
-void processFilesBatch(const std::vector<std::string>& files, const std::string& directoryPath, const std::string& zipname, FILE* outputFile, V2Header& header, bool encrypt, const char* ivStr, const char* keyStr, bool nocompress, bool noencrypt, int chunkmode, int compressionMode);
-void multiThreadedProcessFiles(const std::vector<std::string>& files, const std::string& directoryPath, const std::string& zipname, FILE* outputFile, V2Header& header, bool encryptAll, const char* ivStr, const char* keyStr, bool nocompress, bool noencrypt, int chunkmode, int compressionMode);
+void processFilesBatch(const std::vector<std::wstring>& files, const std::string& directoryPath, const std::wstring& zipname, FILE* outputFile, V2Header& header, bool encrypt, const char* ivStr, const char* keyStr, bool nocompress, bool noencrypt, int chunkmode, int compressionMode);
+void multiThreadedProcessFiles(const std::vector<std::wstring>& files, const std::string& directoryPath, const std::wstring& zipname, FILE* outputFile, V2Header& header, bool encryptAll, const char* ivStr, const char* keyStr, bool nocompress, bool noencrypt, int chunkmode, int compressionMode);
 void processFile(V2File& fileMeta, std::vector<uint8_t>& buffer, FILE* outputFile, V2Header& header, bool encrypt, const char* ivStr, const char* keyStr, bool nocompress, bool noencrypt, int chunkmode, int compressionMode);
 #endif

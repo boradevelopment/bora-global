@@ -30,7 +30,7 @@ void processFile(V2File& fileMeta, std::vector<uint8_t>& buffer, FILE* outputFil
             compress_memoryV(buffer, 9);
         }
         fileMeta.compressedSize = buffer.size();
-        fileMeta.compressionMethod = "zlib";
+        fileMeta.compressionMethod = L"brotli";
     }
 //
 //
@@ -74,15 +74,15 @@ void processFile(V2File& fileMeta, std::vector<uint8_t>& buffer, FILE* outputFil
 
     // Clear temporary buffers to free memory
     buffer.clear();
-    TAZA_LOG_NORMAL("Finished writing "+fileMeta.file);
+    TAZA_LOG_NORMAL(wstringToUtf8(L"Finished writing "+fileMeta.file));
 }
 
-void processFilesBatch(const std::vector<std::string>& files, const std::string& directoryPath, const std::string& zipname, FILE* outputFile, V2Header& header, bool encrypt, const char* ivStr, const char* keyStr, bool nocompress, bool noencrypt, int chunkmode, int compressionMode) {
-    for (std::string fileName : files) {
-        TAZA_LOG_NORMAL("Started writing " + fileName);
-        std::string cov = fileName;
-        std::string covE = fileName;
-        std::string path = directoryPath + "\\";
+void processFilesBatch(const std::vector<std::wstring>& files, const std::string& directoryPath, const std::wstring& zipname, FILE* outputFile, V2Header& header, bool encrypt, const char* ivStr, const char* keyStr, bool nocompress, bool noencrypt, int chunkmode, int compressionMode) {
+    for (std::wstring fileName : files) {
+        //TAZA_LOG_NORMAL("Started writing " + fileName);
+        auto cov = fileName;
+        auto covE = fileName;
+        std::wstring path = utf8ToWstring(directoryPath) + L"\\";
         size_t found = covE.find(path);
 
         if (found != std::string::npos) {
@@ -107,7 +107,7 @@ void processFilesBatch(const std::vector<std::string>& files, const std::string&
     }
 }
 
-void multiThreadedProcessFiles(const std::vector<std::string>& files, const std::string& directoryPath, const std::string& zipname, FILE* outputFile, V2Header& header, bool encryptAll, const char* ivStr, const char* keyStr, bool nocompress, bool noencrypt, int chunkmode, int compressionMode) {
+void multiThreadedProcessFiles(const std::vector<std::wstring>& files, const std::string& directoryPath, const std::wstring& zipname, FILE* outputFile, V2Header& header, bool encryptAll, const char* ivStr, const char* keyStr, bool nocompress, bool noencrypt, int chunkmode, int compressionMode) {
     unsigned int numThreads = std::thread::hardware_concurrency();
     if (numThreads == 0) numThreads = 4; // Default to 4 if hardware_concurrency can't be determined
 
@@ -120,7 +120,7 @@ void multiThreadedProcessFiles(const std::vector<std::string>& files, const std:
     auto it = files.begin();
     for (unsigned int i = 0; i < numThreads; ++i) {
         size_t currentBatchSize = filesPerThread + (i < remainderFiles ? 1 : 0);
-        std::vector<std::string> batch(it, it + currentBatchSize);
+        std::vector<std::wstring> batch(it, it + currentBatchSize);
         it += currentBatchSize;
 
         threads.emplace_back(processFilesBatch, batch, directoryPath, zipname, outputFile, std::ref(header), encryptAll, ivStr, keyStr, nocompress, noencrypt, chunkmode, compressionMode);

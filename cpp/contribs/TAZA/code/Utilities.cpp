@@ -12,7 +12,7 @@
 #include <filesystem>
 namespace fs = std::filesystem;
 
-std::vector<std::string> files;
+std::vector<std::wstring> files;
 std::mutex filesMutex;
 std::queue<std::string> workQueue;
 std::mutex queueMutex;
@@ -62,13 +62,13 @@ void worker() {
             } else if (entry.is_regular_file()) {
                 {
                     std::lock_guard<std::mutex> lock(filesMutex);
-                    files.push_back(fullPath.string());
+                    files.push_back(fullPath.wstring());
                 }
             }
         }
     }
 }
-std::vector<std::string> getFilesInDirectory(const std::string& rootPath, bool recursive, int numThreads) {
+std::vector<std::wstring> getFilesInDirectory(const std::string& rootPath, bool recursive, int numThreads) {
     // Initialize the thread pool
     std::vector<std::thread> threads;
     for (int i = 0; i < numThreads; ++i) {
@@ -183,17 +183,21 @@ std::vector<std::string> getFilesInDirectory(const std::string& directoryPath, b
     return fileNames;
 }
 
-std::size_t getFileSize(const std::string& filename) {
-    std::ifstream file(filename, std::ios::binary | std::ios::ate);
+std::size_t getFileSize(const std::wstring& filename) {
+    std::ifstream file(wstringToUtf8(filename), std::ios::binary | std::ios::ate);
     if (!file) {
         return 0;
     }
     return static_cast<std::size_t>(file.tellg());
 }
-std::vector<uint8_t> readFileWithStream(const std::string& filename) {
+std::vector<uint8_t> readFileWithStream(const std::wstring& filename) {
+#if WIN32
     std::ifstream file(filename, std::ios::binary);
+#else
+    std::ifstream file(wstringToUtf8(filename), std::ios::binary);
+#endif
     if (!file) {
-        throw std::runtime_error("Failed to open file: " + filename);
+        return std::vector<uint8_t>();
     }
 
     file.seekg(0, std::ios::end);
@@ -222,7 +226,7 @@ std::vector<uint8_t> readFile(const std::string& filename) {
 
     return buffer;
 }
-std::vector<uint8_t> readFileWithMmap(const std::string& filename) {
+std::vector<uint8_t> readFileWithMmap(const std::wstring& filename) {
 #if WIN32
     // Convert std::string to LPCWSTR (wide string for Windows API)
     std::wstring wFilename(filename.begin(), filename.end());
@@ -287,7 +291,7 @@ std::vector<uint8_t> readFileWithMmap(const std::string& filename) {
     return buffer;
 #else
     // Open the file
-    int fd = open(filename.c_str(), O_RDONLY);
+    int fd = open(wstringToUtf8(filename).c_str(), O_RDONLY);
     if (fd == -1) {
         return {};
     }
@@ -322,16 +326,20 @@ std::vector<uint8_t> readFileWithMmap(const std::string& filename) {
     return buffer;
 #endif
 }
-std::vector<uint8_t> readFileRange(const std::string& filename, std::streampos start, std::streampos end) {
+std::vector<uint8_t> readFileRange(const std::wstring& filename, std::streampos start, std::streampos end) {
     // Ensure start and end positions are valid
     if (start < 0 || end < start) {
         throw std::invalid_argument("Invalid start or end position.");
     }
 
     // Open the file in binary mode
+#if WIN32
     std::ifstream file(filename, std::ios::binary);
+#else
+    std::ifstream file(wstringToUtf8(filename), std::ios::binary);
+#endif
     if (!file) {
-        throw std::runtime_error("Failed to open file: " + filename);
+        return std::vector<uint8_t>();
     }
 
     // Seek to the start position
@@ -357,7 +365,7 @@ std::vector<uint8_t> readFileRange(const std::string& filename, std::streampos s
 
     return buffer;
 }
-std::vector<uint8_t> readFileMain(const std::string& filename, std::size_t size) {
+std::vector<uint8_t> readFileMain(const std::wstring& filename, std::size_t size) {
     std::size_t fileSize = getFileSize(filename);
     if (fileSize == 0) {
         return std::vector<uint8_t>();
@@ -391,4 +399,41 @@ size_t getRecommendedChunkSize(size_t fileSize, int type) {
     }
 
     return fileSize;  // Default fallback if failure
+}
+
+std::string wstringToUtf8(const std::wstring& wstr) {
+#ifdef _WIN32
+    if (wstr.empty()) return {};
+    int size_needed = WideCharToMultiByte(CP_UTF8, 0, wstr.data(), (int)wstr.size(), nullptr, 0, nullptr, nullptr);
+    std::string result(size_needed, '\0');
+    WideCharToMultiByte(CP_UTF8, 0, wstr.data(), (int)wstr.size(), result.data(), size_needed, nullptr, nullptr);
+    return result;
+#else
+    // On POSIX, wchar_t is already Unicode
+    std::mbstate_t state{};
+    const wchar_t* src = wstr.data();
+    size_t len = std::wcsrtombs(nullptr, &src, 0, &state);
+    if (len == (size_t)-1) throw std::runtime_error("Conversion error");
+    std::string result(len, '\0');
+    std::wcsrtombs(result.data(), &src, len, &state);
+    return result;
+#endif
+}
+
+std::wstring utf8ToWstring(const std::string& str) {
+#ifdef _WIN32
+    if (str.empty()) return {};
+    int size_needed = MultiByteToWideChar(CP_UTF8, 0, str.data(), (int)str.size(), nullptr, 0);
+    std::wstring result(size_needed, L'\0');
+    MultiByteToWideChar(CP_UTF8, 0, str.data(), (int)str.size(), result.data(), size_needed);
+    return result;
+#else
+    std::mbstate_t state{};
+    const char* src = str.data();
+    size_t len = std::mbsrtowcs(nullptr, &src, 0, &state);
+    if (len == (size_t)-1) throw std::runtime_error("Conversion error");
+    std::wstring result(len, L'\0');
+    std::mbsrtowcs(result.data(), &src, len, &state);
+    return result;
+#endif
 }

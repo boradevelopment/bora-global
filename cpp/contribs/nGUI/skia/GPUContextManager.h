@@ -6,7 +6,7 @@
  * Purpose: ?
  */
 #pragma once
-#include "GUISysInfo.h"
+#include "interfaces/GUISkiaSysInfo.h"
 
 class bnWindow;
 class GPUContextManager {

@@ -6,7 +6,8 @@
  * Purpose: Acts as a interface for GUI Renderable classes for SKIA.
  */
 #pragma once
-#include "interfaces/GUISkiaSysInfo.h"
+#include <include/core/SkCanvas.h>
+#include "../interfaces/GUISkiaSysInfo.h"
 
 class IGUIRenderer {
 public:

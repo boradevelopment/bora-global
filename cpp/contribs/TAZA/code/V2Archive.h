@@ -20,7 +20,7 @@ struct V2Archive {
 	std::string output; // Output file
 	const char* iv  = TAZADEFAULTIV; // AES Encryption keys and iv for encrypted methods
 	const char* key = TAZADEFAULTKEY; // AES Encryption keys and iv for encrypted methods
-	std::string warn = TAZADEFAULTWARN; // Warning text for users & modders who could corrupt their files.
+	std::wstring warn = TAZADEFAULTWARN; // Warning text for users & modders who could corrupt their files.
 	int chunkmode = 0; // Chunk mode @ Effiency by default
 	int compressionMode = 7; // Compression Mode @ Custom
     bool autoLifeSpan = false;
@@ -46,15 +46,15 @@ struct V2Archive {
     bool finalizeHeader();
 
     // Creates and processes file
-    int addFile(std::string name);
-    int addFile(std::vector<uint8_t> data, std::string name = "");
-    V2File* addFileAndGet(std::string name, std::string filename);
-    V2File* addFileAndGet(std::vector<uint8_t> data, std::string name = "");
+    int addFile(std::wstring name, std::wstring filename = L"");
+    int addFile(std::vector<uint8_t> data, std::wstring name);
+    V2File* addFileAndGet(std::wstring name, std::wstring filename);
+    V2File* addFileAndGet(std::vector<uint8_t> data, std::wstring name = L"");
 
 
     V2Archive();
 
-    V2Archive(std::string name, const std::string& path, const std::string& warn = "");
+    V2Archive(std::wstring name, const std::string& path, const std::wstring& warn = L"");
     ~V2Archive();
 };
 

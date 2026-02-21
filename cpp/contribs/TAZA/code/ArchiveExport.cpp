@@ -12,7 +12,7 @@ exportResult exportArchive(V2Archive archive) {
     bool isAllSuccess = true;
     for (const auto& [fileName, v2File] : archive.header.files) {
         if (!archive.header.readV2FileFromFile(file, v2File, archive.iv, archive.key)) {
-            TAZA_LOG_ERROR(fileName + ": Failed to export file!");
+            TAZA_LOG_ERROR(wstringToUtf8(fileName + L": Failed to export file!"));
             isAllSuccess = false;
         }
         else {

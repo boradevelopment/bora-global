@@ -1,13 +1,19 @@
 // This header is apart of the BORA Source
 // Check LICENSE.md for more information regarding the BORA license.
-
 /* 
  * FileName: SkiaCPURenderer.h
- * Purpose: ?
+ * Purpose: A CPU Renderer for SKIA, this works for all platforms.
  */
- 
+
 #pragma once
-class SkiaCPURenderer {
-  public:
-    SkiaCPURenderer();
+#include "interfaces/IGUIRenderer.h"
+#include "interfaces/GUISkiaSysInfo.h"
+
+class SkiaCPURenderer : public IGUIRenderer {
+public:
+    SkCanvas* beginFrame(int width, int height) override;
+    void endFrame() override;
+
+private:
+    sk_sp<SkSurface> surface;
 };

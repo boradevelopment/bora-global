@@ -39,13 +39,13 @@ int V2Archive::makeArchive()
         return 2; // INPUT ERROR
     }
 
-    fwrite(this->warn.c_str(), sizeof(char), strlen(this->warn.c_str()), outputFile);
+    fwrite(wstringToUtf8(this->warn).c_str(), sizeof(char), strlen(wstringToUtf8(this->warn).c_str()), outputFile);
     const char padding[] = "#00000000000000000000$00000000000000000000\n";
     fwrite(padding, sizeof(char), strlen(padding), outputFile);
 
 
     int threads = getRecommendedThreadCount();
-    std::vector<std::string> files = getFilesInDirectory(directoryPath, recursive, threads);
+    auto files = getFilesInDirectory(directoryPath, recursive, threads);
     if (files.empty()) {
         TAZA_LOG_ERROR("DIRECTORY EMPTY: "+directoryPath);
         return 3; // DIRECTORY EMPTY
@@ -58,11 +58,11 @@ int V2Archive::makeArchive()
         }
 
 
-        std::string zipname = std::filesystem::path(output).filename().string();
+        std::wstring zipname = std::filesystem::path(output).filename().wstring();
         header.file = zipname.c_str();
         header.totalFiles = files.size();
         header.creationDate = std::time(nullptr);
-        header.compressionMethod = "zlib";
+        header.compressionMethod = L"brotli";
 
         multiThreadedProcessFiles(files, directoryPath, zipname, outputFile, header, true, iv, key, nocompression, noencrypt, chunkmode, compressionMode);
 
@@ -155,14 +155,18 @@ int V2Archive::getArchive()
 #endif
 }
 
-int V2Archive::addFile(std::string name) {
+int V2Archive::addFile(std::wstring name, std::wstring filename) {
     // NOTE: This will not initalize header, use initalize
     V2File fileMeta;
-    fileMeta.file = name;
-    fileMeta.filePath = "";
+    if(filename.empty())
+        fileMeta.file = std::filesystem::path(name).filename().wstring();
+    else
+        fileMeta.file = filename;
+
+    fileMeta.filePath = name;
 
     // Prepare the data in a more memory-efficient way
-    std::vector<uint8_t> buffer = readFileMain(fileMeta.file);
+    std::vector<uint8_t> buffer = readFileMain(fileMeta.filePath);
     if (buffer.empty()) {
         return 1; // empty buffer [file does not exist]
     }
@@ -177,11 +181,11 @@ int V2Archive::addFile(std::string name) {
     return 0;
 }
 
-int V2Archive::addFile(std::vector<uint8_t> data, std::string name) {
+int V2Archive::addFile(std::vector<uint8_t> data, std::wstring name) {
     // NOTE: This will not initalize header, use initalize
     V2File fileMeta;
     fileMeta.file = std::move(name);
-    fileMeta.filePath = "";
+    fileMeta.filePath = L"";
 
 
     if (data.empty()) {
@@ -204,7 +208,7 @@ void V2Archive::createHeaderPadding() {
         return; // OUTPUT ERROR
     }
 
-    fwrite(this->warn.c_str(), sizeof(char), strlen(this->warn.c_str()), outputFile);
+    fwrite(wstringToUtf8(this->warn).c_str(), sizeof(char), strlen(wstringToUtf8(this->warn).c_str()), outputFile);
     const char padding[] = "#00000000000000000000$00000000000000000000\n";
     fwrite(padding, sizeof(char), strlen(padding), outputFile);
 
@@ -215,11 +219,10 @@ void V2Archive::createHeaderPadding() {
     }
 
 
-    std::string zipname = "test";
-    header.file = zipname.c_str();
+    header.file = L"";
     header.totalFiles = files.size();
     header.creationDate = std::time(nullptr);
-    header.compressionMethod = "zlib";
+    header.compressionMethod = L"brotli";
 }
 
 bool V2Archive::finalizeHeader() {
@@ -230,27 +233,41 @@ V2Archive::V2Archive(){
     TAZA_BASEDIR(TAZABASEDIR);
 }
 
-V2Archive::V2Archive(std::string name, const std::string& path, const std::string& warn){
+V2Archive::V2Archive(std::wstring name, const std::string& path, const std::wstring& warn){
     TAZA_BASEDIR(TAZABASEDIR);
+
+    tm fileTM;
+    std::time_t fileTime = std::time(nullptr);
 #if WIN32
-    if (fopen_s(&outputFile, path.c_str(), "wb") != 0 || !outputFile) {
+    localtime_s(&fileTM, &fileTime);
+#elif __linux__|| __APPLE__
+    localtime_r(&fileTime, &fileTM);
+#endif
+    std::ostringstream oss;
+    oss << "temp." << std::put_time(&fileTM, "%Y-%m-%d_%H-%M-%S") << ".tazatmp";
+    header.tempPath = oss.str();
+
+#if WIN32
+    if (fopen_s(&outputFile, header.tempPath.c_str(), "wb") != 0 || !outputFile) {
         throw std::runtime_error("Failed to open archive file for writing.");
     }
 #elif __linux__
-    outputFile = fopen64(path.c_str(), "wb");
+    outputFile = fopen64(header.tempPath.c_str(), "wb");
     if (!outputFile) {
         throw std::runtime_error("Failed to open archive file for writing.");
     }
 #elif __APPLE__
-    outputFile = fopen(path.c_str(), "wb");
+    outputFile = fopen(header.tempPath.c_str(), "wb");
     if (!outputFile) {
         throw std::runtime_error("Failed to open archive file for writing.");
     }
 #endif
+
     header.version = TAZAVERSION;
     autoLifeSpan = true;
     header.file = std::move(name);
-    if(!warn.empty()) this->warn = warn + "\n";
+    header.filePath = path;
+    if(!warn.empty()) this->warn = warn + L"\n";
     createHeaderPadding();
 }
 
@@ -258,11 +275,11 @@ V2Archive::~V2Archive(){
     if(autoLifeSpan) finalizeHeader();
 }
 
-V2File* V2Archive::addFileAndGet(std::vector<uint8_t> data, std::string name) {
+V2File* V2Archive::addFileAndGet(std::vector<uint8_t> data, std::wstring name) {
     // NOTE: This will not initalize header, use initalize
     V2File fileMeta;
     fileMeta.file = std::move(name);
-    fileMeta.filePath = "";
+    fileMeta.filePath = L"";
     fileMeta.regularsize = data.size();
 
 
@@ -280,11 +297,11 @@ V2File* V2Archive::addFileAndGet(std::vector<uint8_t> data, std::string name) {
     return &header.files[fileMeta.file];
 }
 
-V2File* V2Archive::addFileAndGet(std::string name,  std::string filename) {
+V2File *V2Archive::addFileAndGet(std::wstring name, std::wstring filename) {
     // NOTE: This will not initalize header, use initalize
     V2File fileMeta;
     if(filename.empty())
-        fileMeta.file = std::filesystem::path(name).filename().string();
+        fileMeta.file = std::filesystem::path(name).filename().wstring();
     else
         fileMeta.file = filename;
 

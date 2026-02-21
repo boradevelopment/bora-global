@@ -20,3 +20,11 @@ namespace CommandCategories {
     inline constexpr const char* SysImportsAudio       = "sysimpAudio";
     inline constexpr const char* SysImportsCPU       = "sysimpCPU";
 }
+
+
+#pragma pack(push, 1)
+struct TestCommandData
+{
+    int value;
+};
+#pragma pack(pop)
