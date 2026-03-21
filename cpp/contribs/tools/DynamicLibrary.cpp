@@ -4,7 +4,7 @@
 
 DynamicLibrary::DynamicLibrary(const wchar_t* path) : libraryHandle(nullptr) {
 #ifdef WIN32
-    libraryHandle = LoadLibrary(path);
+    libraryHandle = LoadLibraryW(path);
 #elif defined(__linux__)
     libraryHandle = dlopen(path, RTLD_LAZY);
 #endif

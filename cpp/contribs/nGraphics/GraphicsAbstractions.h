@@ -1,3 +1,5 @@
+// BORA_INCLUDED_IN_SDK
+// ^^^ Never remove this! This indicates that this should be included in production builds of libbora
 #pragma once
 #include "nCommon/Resources.h"
 
@@ -591,7 +593,7 @@ inline int GetFallbackChoice(GraphicsChoice choice) {
     default: return GraphicsChoice::NONE;
     }
 #else
-    return fallback == 0 ? GraphicsChoice::OPENGL : GraphicsChoice::NONE;
+    return GraphicsChoice::NONE;
 #endif
 }
 

@@ -6,6 +6,7 @@
  * Purpose: ?
  */
 #pragma once
+#ifdef BORA_UI_SUPPORT
 #include "interfaces/GUISkiaSysInfo.h"
 
 class bnWindow;
@@ -25,4 +26,4 @@ IDXGIAdapter1* adapter);
     static sk_sp<GaneshGPUContextType> headlessContext;
     static std::unordered_map<void*, sk_sp<GaneshGPUContextType>> windowContexts;
 };
-
+#endif

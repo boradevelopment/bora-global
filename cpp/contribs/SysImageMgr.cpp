@@ -1,6 +1,6 @@
 // Apart of the BORA Runtime Source which uses the TAOSU License
 // Check LICENSE.md for more information regarding the BORA license.
-
+#ifdef BORA_UI_SUPPORT
 #include "SysImageMgr.h"
 #include "SVGRasterizer.h"
 
@@ -463,4 +463,5 @@ SysImage SysImageMgr::CreateImage(sVec<u8> bytes) {
     return hBitmap;
 }
 
+#endif
 #endif

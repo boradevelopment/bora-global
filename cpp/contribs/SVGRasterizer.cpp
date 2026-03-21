@@ -1,5 +1,6 @@
 // Apart of the BORA Runtime Source which uses the TAOSU License
 // Check LICENSE.md for more information regarding the BORA license.
+#ifdef BORA_UI_SUPPORT
 #include "SVGRasterizer.h"
 #ifdef WIN32
 #pragma comment(lib, "gdiplus.lib")
@@ -430,3 +431,4 @@ bool SVGRasterizer::rasterizeSkiaGPU(GrDirectContext *grContext, const u8 *svgDa
 
     return true;
 }
+#endif

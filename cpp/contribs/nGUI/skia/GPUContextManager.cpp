@@ -1,5 +1,6 @@
 // Apart of the BORA Runtime Source which uses the TAOSU License
 // Check LICENSE.md for more information regarding the BORA license.
+#ifdef BORA_UI_SUPPORT
 #include "GPUContextManager.h"
 #include "nGraphics/bnGraphicsD3D12.h"
 #include "nWindow/bnWindow.h"
@@ -57,3 +58,4 @@ sk_sp<GrDirectContext> GPUContextManager::createD3DContext(ID3D12Device *device,
 
     return grContext;
 }
+#endif

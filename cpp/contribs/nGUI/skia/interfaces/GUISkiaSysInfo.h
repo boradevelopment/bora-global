@@ -4,6 +4,7 @@
  * FileName: GUISysInfo.h
  * Purpose: Includes important information for UI classes to use globally
  */
+#ifdef BORA_UI_SUPPORT
 #pragma once
 #ifdef WIN32
 #include <d3d11.h>
@@ -13,3 +14,4 @@ typedef GrDirectContext GaneshGPUContextType;
 #endif
 #include <include/gpu/ganesh/vk/GrVkDirectContext.h>
 #include "include/gpu/ganesh/SkSurfaceGanesh.h"
+#endif

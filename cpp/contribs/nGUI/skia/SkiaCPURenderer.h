@@ -8,7 +8,7 @@
 #pragma once
 #include "interfaces/IGUIRenderer.h"
 #include "interfaces/GUISkiaSysInfo.h"
-
+#ifdef BORA_UI_SUPPORT
 class SkiaCPURenderer : public IGUIRenderer {
 public:
     SkCanvas* beginFrame(int width, int height) override;
@@ -17,3 +17,4 @@ public:
 private:
     sk_sp<SkSurface> surface;
 };
+#endif

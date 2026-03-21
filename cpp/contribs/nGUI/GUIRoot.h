@@ -4,8 +4,8 @@
  * FileName: GUIRoot.h
  * Purpose: Root of GUI base classes
  */
-
 #pragma once
+#ifdef BORA_UI_SUPPORT
 #include <memory>
 #include "skia/interfaces/IGUIRenderer.h"
 
@@ -23,3 +23,4 @@ public:
 private:
     std::unique_ptr<IGUIRenderer> renderer;
 };
+#endif

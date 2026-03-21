@@ -1,3 +1,5 @@
+// BORA_INCLUDED_IN_SDK
+// ^^^ Never remove this! This indicates that this should be included in production builds of libbora
 #pragma once
 #include "GraphicsAbstractions.h"
 #include <cstddef>

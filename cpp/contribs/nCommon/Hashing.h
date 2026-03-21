@@ -1,11 +1,14 @@
+// BORA_INCLUDED_IN_SDK
+// ^^^ Never remove this! This indicates that this should be included in production builds of libbora
 // This header is apart of the BORA Source
 // Check LICENSE.md for more information regarding the BORA license.
-
 /* 
  * FileName: Hashing.h
  * Purpose: Storing hash utility files, to be continued.
  */
 #pragma once
+#include <iostream>
+
 inline uint64_t BoraHash64(const char* str, size_t len, uint64_t seed = 0x9E3779B97F4A7C15ULL) {
     uint64_t hash = seed;
     const uint8_t* data = reinterpret_cast<const uint8_t*>(str);

@@ -1,5 +1,5 @@
 #include "bnShader.h"
-
+#ifdef BORA_USE_SPIRV
 bnShader::bnShader(IShader* shader)
 {
     type = shader->type;
@@ -91,7 +91,6 @@ TextureFormat DeduceFormat(const spirv_cross::SPIRType& type) {
 
     return TextureFormat::Unknown;
 }
-
 
 BinaryShaderResult* bnShader::GetBinary(GraphicsChoice type)
 {
@@ -213,3 +212,4 @@ ShaderReflection bnShader::getReflection()
 
     return refl;
 }
+#endif

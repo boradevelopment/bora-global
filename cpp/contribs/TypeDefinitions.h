@@ -6,16 +6,15 @@ typedef signed long int __int64;
 #endif
 
 // C and C++ shared types
-typedef unsigned int u32, *p32;
-typedef unsigned char u8, *p8;
-typedef unsigned long int u64, * pu64;
-typedef unsigned short u16, * pu16;
-typedef signed char i8, *pi8;
-typedef signed short i16, *p16;
-typedef signed int i32, *pi32;
-typedef signed long int i64, *pi64;
-typedef unsigned long long u64Pointer;
-typedef long long i64Pointer;
+#include <cstdint>
+typedef uint32_t u32;
+typedef uint8_t  u8;
+typedef uint64_t u64;  // This is guaranteed to be 8 bytes
+typedef uint16_t u16;
+typedef int8_t   i8;
+typedef int16_t  i16;
+typedef int32_t  i32;
+typedef int64_t  i64;
 
 // extras
 typedef u8 byte;

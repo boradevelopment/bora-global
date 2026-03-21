@@ -10,6 +10,7 @@
  * files.
  */
 #pragma once
+#ifdef BORA_UI_SUPPORT
 #include "modules/svg/include/SkSVGDOM.h"
 #include "include/core/SkStream.h"
 #include "include/core/SkFontMgr.h"
@@ -148,3 +149,4 @@ private:
         return svg;
     }
 };
+#endif

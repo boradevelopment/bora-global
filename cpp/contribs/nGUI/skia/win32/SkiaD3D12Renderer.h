@@ -5,6 +5,7 @@
  * Purpose: A GPU Renderer for D3D12 for GUI rendering!
  */
 #pragma once
+#ifdef BORA_UI_SUPPORT
 #ifdef WIN32
 #include "../interfaces/IGUIRenderer.h"
 #include "../interfaces/GUISkiaSysInfo.h"
@@ -29,4 +30,5 @@ private:
     sk_sp<SkSurface> surface;
     bnGraphicsD3D12* engine;
 };
+#endif
 #endif

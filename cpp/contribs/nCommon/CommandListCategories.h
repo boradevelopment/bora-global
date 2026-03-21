@@ -1,6 +1,7 @@
+// BORA_INCLUDED_IN_SDK
+// ^^^ Never remove this! This indicates that this should be included in production builds of libbora
 // This header is apart of the BORA Source
 // Check LICENSE.md for more information regarding the BORA license.
-
 /* 
  * FileName: CommandListCategories.h
  * Purpose: A bunch of definitions for list categories, this is for specific features that use a commandlist
@@ -26,5 +27,7 @@ namespace CommandCategories {
 struct TestCommandData
 {
     int value;
+    const char* text;
+    u64 ptr;
 };
 #pragma pack(pop)

@@ -1,4 +1,5 @@
 #pragma once
+#ifdef BORA_USE_SPIRV
 #include "ExplicitGraphicsAbstract.h"
 #include "3rdparty/bspirv/spirv_cross.hpp"
 #include "3rdparty/bspirv/spirv_hlsl.hpp"
@@ -62,4 +63,5 @@ private:
     sVec<u32> data;
     ShaderDesc::Type type;
 };
+#endif
 

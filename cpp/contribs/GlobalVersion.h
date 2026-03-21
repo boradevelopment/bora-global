@@ -1,6 +1,7 @@
+// BORA_INCLUDED_IN_SDK
+// ^^^ Never remove this! This indicates that this should be included in production builds of libbora
 // This header is apart of the BORA Source
 // Check LICENSE.md for more information regarding the BORA license.
-
 /* 
  * FileName: Versioning.h
  * Purpose: Global Versioning

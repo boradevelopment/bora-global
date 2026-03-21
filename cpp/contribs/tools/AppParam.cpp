@@ -84,6 +84,8 @@ std::vector<std::wstring> AppParam::getArray(const std::string& key) {
 
     std::wstring raw = it->second.value;
 
+    if (raw.empty()) return {};
+
     // Remove outer brackets
     if (raw.front() == '[' && raw.back() == ']')
         raw = raw.substr(1, raw.size() - 2);

@@ -13,6 +13,7 @@
  * Updates - ?
  * Known issues - ?
  */
+#ifdef BORA_UI_SUPPORT
 #ifndef BORA_SYSIMAGEMGR_H
 #define BORA_SYSIMAGEMGR_H
 #if WIN32
@@ -62,3 +63,4 @@ private:
 };
 #endif
 #endif //BORA_SYSIMAGEMGR_H
+#endif
