@@ -39,17 +39,17 @@ public:
 
     virtual void BindShader(IShader*) {};
     virtual void BindBuffer(IBuffer*) {};
-    virtual void BindTexture(ITexture*, u8 slot = 0) {};
+    virtual void BindTexture(ITexture*, uint slot = 0) {};
     virtual void BindInputLayout(IInputLayout*) {};
-    virtual void BindSamplerState(ISamplerState*, u8 slot = 0) {};
+    virtual void BindSamplerState(ISamplerState*, uint slot = 0) {};
     virtual void BindViewPort(IViewPort*) {};
     virtual void BindRasterizerState(IRasterizerState*) {};
-    virtual void BindDepthStencilState(IDepthStencilState*, u32 stencilRef = 0) {};
-    virtual void BindBlendState(IBlendState*, const float blendFactor[4], u32 sampleMask = 0xFFFFFFFF) {};
+    virtual void BindDepthStencilState(IDepthStencilState*, uint stencilRef = 0) {};
+    virtual void BindBlendState(IBlendState*, const float blendFactor[4], uint sampleMask = 0xFFFFFFFF) {};
     virtual void BindRenderTarget(IRenderTarget*, IDepthStencil* = nullptr) {};
     virtual void ClearRenderTarget(IRenderTarget* target, const float color[4]) {};
-    virtual void ClearDepthStencil(IDepthStencil* target, float depth, u8 stencil) {};
-    virtual void DispatchCompute(u32 x, u32 y, u32 z) {};
+    virtual void ClearDepthStencil(IDepthStencil* target, float depth, uint stencil) {};
+    virtual void DispatchCompute(uint x, uint y, uint z) {};
     virtual void CopyToBuffer(IBuffer* buffer, void* data, size_t size) {};
     virtual void Draw(PrimitiveType type, size_t vertexCount, size_t vertexOffset = 0) {};
     virtual void DrawIndexed(PrimitiveType type, IBuffer* indexBuffer, size_t indexCount, size_t indexOffset = 0) {};

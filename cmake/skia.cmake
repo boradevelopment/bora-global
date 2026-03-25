@@ -18,17 +18,32 @@ else ()
     set(SKIA_SUFFIX ".sh")
 endif ()
 
+if(WIN32)
+    set(SHELL_CMD "cmd" "/C")
+else()
+    set(SHELL_CMD "") # Unix can usually execute .sh directly if permissions are set
+endif()
+
+if(NOT WIN32)
+    execute_process(COMMAND chmod +x "${SKIA_SOURCE_DIR}/build_all.sh")
+    execute_process(COMMAND chmod +x "${SKIA_SOURCE_DIR}/bin/ninja")
+endif()
+
 # ----------------------
 # DEBUG BUILD
 # ----------------------
 ExternalProject_Add(
         skia_debug
         SOURCE_DIR ${SKIA_SOURCE_DIR}
-        BINARY_DIR ${SKIA_BUILD_DIR}/Debug
+        BINARY_DIR ${SKIA_SOURCE_DIR}
 
         CONFIGURE_COMMAND
-        cmd /C
-        "cd /D ${SKIA_SOURCE_DIR} && build_all${SKIA_SUFFIX} ${SKIA_BUILD_DIR} DEBUG ${ASAN_CODE} ${ASAN_PREFIX}"
+        ${SHELL_CMD} 
+        "${SKIA_SOURCE_DIR}/build_all${SKIA_SUFFIX}${SCRIPT_EXT}" 
+        "${SKIA_BUILD_DIR}" 
+        "DEBUG" 
+        "${ASAN_CODE}" 
+        "${ASAN_PREFIX}"
 
         INSTALL_COMMAND ""
         BUILD_COMMAND ""
@@ -39,11 +54,17 @@ ExternalProject_Add(
 ExternalProject_Add(
         skia_release
         SOURCE_DIR ${SKIA_SOURCE_DIR}
-        BINARY_DIR ${SKIA_BUILD_DIR}/Release
+        BINARY_DIR ${SKIA_SOURCE_DIR}
+
 
         CONFIGURE_COMMAND
-        cmd /C
-        "cd /D ${SKIA_SOURCE_DIR} && build_all${SKIA_SUFFIX} ${SKIA_BUILD_DIR} RELEASE ${ASAN_CODE} ${ASAN_PREFIX}"
+        ${SHELL_CMD} 
+        "${SKIA_SOURCE_DIR}/build_all${SKIA_SUFFIX}${SCRIPT_EXT}" 
+        "${SKIA_BUILD_DIR}" 
+        "RELEASE" 
+        "${ASAN_CODE}" 
+        "${ASAN_PREFIX}"
+
 
         INSTALL_COMMAND ""
         BUILD_COMMAND ""

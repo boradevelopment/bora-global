@@ -168,7 +168,6 @@ struct VertexAttribDesc {
     size_t offset = 0;              // offsetof in struct
     bool perInstance = false;       // true = per-instance data
     std::string semanticName = "TEXCOORD"; // Spir-V uses texcoords, change if needed
-
 };
 
 struct InputLayoutDesc {
@@ -230,7 +229,7 @@ enum class ComparisonFunc
 
 struct SamplerStateDesc
 {
-    u8 slot = 0;
+    uint slot = 0;
     TextureFilter       minFilter = TextureFilter::Linear;   // Minification
     TextureFilter       magFilter = TextureFilter::Linear;   // Magnification
     TextureFilter       mipFilter = TextureFilter::Linear;   // Mipmap filtering
@@ -289,8 +288,8 @@ enum class PrimitiveType {
 
 
 struct ViewPort {
-    long x;
-    long y;
+    i32 x;
+    i32 y;
     long width;
     long height;
     long minDepth;
@@ -572,7 +571,7 @@ inline int GetFallbackChoice(GraphicsChoice choice) {
     }
 #elif defined(__APPLE__)
     // macOS / iOS
-    switch (fallback) {
+    switch (choice) {
     case 0: return GraphicsChoice::METAL;
     case 1: return GraphicsChoice::VULKAN; // MoltenVK fallback
     case 2: return GraphicsChoice::OPENGL;

@@ -1,6 +1,6 @@
 // Apart of the BORA Runtime Source which uses the TAOSU License
 // Check LICENSE.md for more information regarding the BORA license.
-#ifdef BORA_UI_SUPPORT
+#if defined(BORA_UI_SUPPORT) && defined(WIN32)
 #include "SkiaD3D12Renderer.h"
 #include <include/core/SkColorSpace.h>
 #include <include/gpu/ganesh/GrBackendSurface.h>

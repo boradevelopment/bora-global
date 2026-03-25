@@ -6,10 +6,18 @@
  */
 #ifdef BORA_UI_SUPPORT
 #pragma once
+#include "include/gpu/ganesh/GrDirectContext.h"
 #ifdef WIN32
 #include <d3d11.h>
-#include "include/gpu/ganesh/GrDirectContext.h"
 #include "include/gpu/ganesh/d3d/GrD3DBackendContext.h"
+#include <include/gpu/ganesh/gl/mac/GrGLMakeWinInterface.h>
+typedef GrDirectContext GaneshGPUContextType;
+#elif defined(__APPLE__)
+#import <Metal/Metal.h>
+#include "include/gpu/ganesh/mtl/GrMtlDirectContext.h"
+#include "include/gpu/ganesh/mtl/GrMtlBackendContext.h"
+#include "include/gpu/ganesh/mtl/GrMtlBackendSurface.h"
+#include <include/gpu/ganesh/gl/mac/GrGLMakeMacInterface.h>
 typedef GrDirectContext GaneshGPUContextType;
 #endif
 #include <include/gpu/ganesh/vk/GrVkDirectContext.h>

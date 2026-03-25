@@ -4,6 +4,7 @@
 #include "GPUContextManager.h"
 #include "nGraphics/bnGraphicsD3D12.h"
 #include "nWindow/bnWindow.h"
+#include "darwin/SkiaMTLContextCreator.h"
 
 inline std::unordered_map<void*, sk_sp<GaneshGPUContextType>> GPUContextManager::windowContexts;
 
@@ -25,6 +26,14 @@ sk_sp<GrDirectContext> GPUContextManager::getGaneshContextForWindow(const bnWind
             return windowContexts[window->handle];
         }
     }
+#elif defined(__APPLE__)
+    if (window->choice == METAL) {
+        if (windowContexts[window->handle]) {
+            return windowContexts[window->handle];
+        } else {
+            windowContexts[window->handle] = SkiaMTLContextCreator::createNewContextFromWindow(window);
+        }
+    }
 #endif
     return nullptr;
 }
@@ -37,6 +46,8 @@ void GPUContextManager::shutdownGaneshContextForWindow(const bnWindow *window) {
     }
 }
 
+
+#ifdef WIN32
 sk_sp<GrDirectContext> GPUContextManager::createD3DContext(ID3D12Device *device, ID3D12CommandQueue *queue,
                                                            IDXGIAdapter1 *adapter) {
     if (!device || !queue || !adapter) return nullptr;
@@ -58,4 +69,5 @@ sk_sp<GrDirectContext> GPUContextManager::createD3DContext(ID3D12Device *device,
 
     return grContext;
 }
+#endif
 #endif

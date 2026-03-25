@@ -1,6 +1,8 @@
 // This is used for the entirity of BORA C++ Source.
 #pragma once
 #if defined(__cplusplus)
+#include <climits> // For integer limits
+#include <cfloat>  // For FLT_MAX
 #if __linux__ || __APPLE__
 typedef signed long int __int64;
 #endif

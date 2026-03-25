@@ -17,10 +17,13 @@ public:
     static void shutdownGaneshContextForWindow(const bnWindow* window);
     bool isGPUAvailable() const { return headlessContext != nullptr; }
 private:
+
 #ifdef WIN32
     static sk_sp<GaneshGPUContextType> createD3DContext(ID3D12Device* device,
 ID3D12CommandQueue* queue,
 IDXGIAdapter1* adapter);
+#elif defined(__APPLE__)
+
 #endif
 
     static sk_sp<GaneshGPUContextType> headlessContext;
