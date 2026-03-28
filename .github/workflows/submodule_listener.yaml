@@ -1,0 +1,45 @@
+name: Listen to submodule changes
+jobs:
+  update:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout root repo (Default Branch)
+        uses: actions/checkout@v3
+        with:
+          # Start by checking out the default branch to ensure we have a base
+          ref: ${{ github.event.repository.default_branch }}
+          token: ${{ secrets.GITHUB_TOKEN }}
+          fetch-depth: 0
+
+      - name: Switch to target branch (Create if missing)
+        run: |
+          TARGET_BRANCH="${{ github.event.client_payload.branch }}"
+          
+          # Check if the branch exists on the remote
+          if git ls-remote --heads origin "$TARGET_BRANCH" | grep -q "$TARGET_BRANCH"; then
+            echo "Branch $TARGET_BRANCH exists. Switching..."
+            git checkout "$TARGET_BRANCH"
+          else
+            echo "Branch $TARGET_BRANCH not found. Creating from default..."
+            git checkout -b "$TARGET_BRANCH"
+          fi
+
+      - name: Sync and update submodules
+        run: |
+          git submodule sync
+          git submodule update --init --remote
+
+      - name: Commit and Push
+        run: |
+          git config user.name "GitHub Action"
+          git config user.email "action@github.com"
+          git add .
+          
+          # Only commit and push if there are changes
+          if ! git diff --cached --quiet; then
+            git commit -m "Update submodules from ${{ github.event.client_payload.repo }} on branch ${{ github.event.client_payload.branch }}"
+            # Use -u to set up tracking for newly created branches
+            git push -u origin HEAD:"${{ github.event.client_payload.branch }}"
+          else
+            echo "No changes to commit."
+          fi
