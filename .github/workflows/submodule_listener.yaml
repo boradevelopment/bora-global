@@ -31,8 +31,34 @@ jobs:
 
       - name: Sync and update submodules
         run: |
-          git submodule sync
-          git submodule update --init --remote
+          git submodule init
+          TARGET_REPO="${{ github.event.client_payload.repo }}"
+          TARGET_BRANCH="${{ github.event.client_payload.branch }}"
+          REPO_NAME=$(basename "$TARGET_REPO")
+          # Finds the 'submodule.NAME.url' that matches our repo, 
+          # Or gets the 'submodule.NAME.path' for that same NAME.
+          SUB_NAME=$(git config --file .gitmodules --get-regexp url | grep -i "$REPO_NAME" | head -n 1 | cut -d'.' -f2)
+          
+          if [ -z "$SUB_NAME" ]; then
+            echo "Direct URL match failed. Trying a case-insensitive path search..."
+            SUB_PATH=$(git config --file .gitmodules --get-regexp path | grep -i "$REPO_NAME" | head -n 1 | awk '{print $2}')
+          else
+            SUB_PATH=$(git config --file .gitmodules --get "submodule.$SUB_NAME.path")
+          fi
+
+          if [ -n "$SUB_PATH" ]; then            
+            git submodule update --init "$SUB_PATH"
+            cd "$SUB_PATH"
+            git fetch origin "$TARGET_BRANCH"
+            git checkout "$TARGET_BRANCH" || git checkout -b "$TARGET_BRANCH" origin/"$TARGET_BRANCH"
+            git pull origin "$TARGET_BRANCH"
+            cd -
+          else
+            echo "ERROR: Could not map $TARGET_REPO to a local path in .gitmodules."
+            echo "--- Current .gitmodules ---"
+            cat .gitmodules
+            exit 1
+          fi
 
       - name: Commit and Push
         run: |
