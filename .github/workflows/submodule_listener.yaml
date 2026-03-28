@@ -1,4 +1,9 @@
-name: Listen to submodule changes
+name: Update Submodules
+on:
+  repository_dispatch:
+    types: [update_submodule]
+permissions:
+  contents: write
 jobs:
   update:
     runs-on: ubuntu-latest
