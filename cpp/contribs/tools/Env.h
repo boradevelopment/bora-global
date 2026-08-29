@@ -13,10 +13,9 @@
  * Updates - ?
  * Known issues - ?
  */
-#ifndef BORAC_ENV_H
-#define BORAC_ENV_H
-#if WIN32
+#pragma once
 
+#ifdef _WIN64
 #include <windows.h>
 #include <string>
 #include <iostream>
@@ -181,4 +180,3 @@ private:
     }
 };
 #endif
-#endif //BORAC_ENV_H

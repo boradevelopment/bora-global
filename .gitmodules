@@ -1,3 +1,6 @@
 [submodule "contribs/bskia"]
 	path = contribs/bskia
 	url = https://github.com/boradevelopment/bskia.git
+[submodule "contribs/bora-wasmtime"]
+	path = contribs/bora-wasmtime
+	url = https://github.com/boradevelopment/bora-wasmtime.git

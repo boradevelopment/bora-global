@@ -26,11 +26,11 @@ int V2Archive::makeArchive()
 	std::string fulOut = output;
 	const std::string directoryPath = input;
 
-#if WIN32
+#ifdef _WIN64
     fopen_s(&outputFile, fulOut.c_str(), "wb");
-#elif __linux__
+#elif defined(__linux__)
     outputFile = fopen64(fulOut.c_str(), "wb");
-#elif __APPLE__
+#elif defined(__APPLE__)
     outputFile = fopen(fulOut.c_str(), "wb");
 #endif
 
@@ -124,9 +124,9 @@ int V2Archive::getArchive()
         //std::string headendStr = headerpos.substr(dollarPos + 1);  // Value after $
 
         int64_t start = 0, end = 0;
-#if WIN32
+#ifdef _WIN64
         sscanf_s(headerpos.c_str(), "#%lld$%lld", &headbeg, &headend);
-#elif __linux__
+#elif defined(__linux__)
         sscanf(headerpos.c_str(), "#%lld$%lld", &headbeg, &headend);
 #endif
 
@@ -238,7 +238,7 @@ V2Archive::V2Archive(std::wstring name, const std::string& path, const std::wstr
 
     tm fileTM;
     std::time_t fileTime = std::time(nullptr);
-#if WIN32
+#ifdef _WIN64
     localtime_s(&fileTM, &fileTime);
 #elif __linux__|| __APPLE__
     localtime_r(&fileTime, &fileTM);
@@ -247,7 +247,7 @@ V2Archive::V2Archive(std::wstring name, const std::string& path, const std::wstr
     oss << "temp." << std::put_time(&fileTM, "%Y-%m-%d_%H-%M-%S") << ".tazatmp";
     header.tempPath = oss.str();
 
-#if WIN32
+#ifdef _WIN64
     if (fopen_s(&outputFile, header.tempPath.c_str(), "wb") != 0 || !outputFile) {
         throw std::runtime_error("Failed to open archive file for writing.");
     }
@@ -297,15 +297,15 @@ V2File* V2Archive::addFileAndGet(std::vector<uint8_t> data, std::wstring name) {
     return &header.files[fileMeta.file];
 }
 
-V2File *V2Archive::addFileAndGet(std::wstring name, std::wstring filename) {
+V2File *V2Archive::addFileAndGet(std::wstring path, std::wstring filename) {
     // NOTE: This will not initalize header, use initalize
     V2File fileMeta;
     if(filename.empty())
-        fileMeta.file = std::filesystem::path(name).filename().wstring();
+        fileMeta.file = std::filesystem::path(path).filename().wstring();
     else
         fileMeta.file = filename;
 
-    fileMeta.filePath = name;
+    fileMeta.filePath = path;
 
     // Prepare the data in a more memory-efficient way
     std::vector<uint8_t> buffer = readFileMain(fileMeta.filePath);

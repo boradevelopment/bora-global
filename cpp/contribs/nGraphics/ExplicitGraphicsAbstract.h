@@ -80,6 +80,8 @@ class IPipelineBuilder {
 public:
     virtual ~IPipelineBuilder() = default;
 
+    virtual IPipelineBuilder& From(const IPipelineBuilder& builder) = 0;
+
     virtual IPipelineBuilder& AddShader(IShader* shader) = 0;
 
     virtual IPipelineBuilder& SetInputLayout(IInputLayout* layout) = 0;

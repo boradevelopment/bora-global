@@ -9,7 +9,7 @@ void compress_memoryV(std::vector<uint8_t>& data, int compressionLevel) {
 
     size_t outSize = maxOutSize;
     if (!BrotliEncoderCompress(
-            BROTLI_DEFAULT_QUALITY, BROTLI_DEFAULT_WINDOW, BROTLI_MODE_GENERIC,
+            BROTLI_MAX_QUALITY, BROTLI_DEFAULT_WINDOW, BROTLI_MODE_GENERIC,
             data.size(), data.data(),
             &outSize, output.data())) {
         throw std::runtime_error("Brotli compression failed");

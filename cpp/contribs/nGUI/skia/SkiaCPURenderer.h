@@ -11,7 +11,7 @@
 #ifdef BORA_UI_SUPPORT
 class SkiaCPURenderer : public IGUIRenderer {
 public:
-    SkCanvas* beginFrame(int width, int height) override;
+    IGUISurface* beginFrame(int width, int height) override;
     void endFrame() override;
 
 private:

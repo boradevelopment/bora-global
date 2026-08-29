@@ -19,7 +19,6 @@ void processFile(V2File& fileMeta, std::vector<uint8_t>& buffer, FILE* outputFil
 
 //
     if (!nocompress) {
-
         if (FSIZE >= MB1) {
             fileMeta.isCompressionChunked = true;
             fileMeta.compressionChunkSize = getRecommendedChunkSize(FSIZE, chunkmode);

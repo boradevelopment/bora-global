@@ -2,7 +2,7 @@
 // Check LICENSE.md for more information regarding the BORA license.
 #ifdef BORA_UI_SUPPORT
 #include "SVGRasterizer.h"
-#ifdef WIN32
+#ifdef _WIN64
 #pragma comment(lib, "gdiplus.lib")
 #pragma comment(lib, "windowscodecs.lib")
 #pragma comment(lib, "d2d1.lib")
@@ -14,7 +14,7 @@ bool SVGRasterizer::rasterize(const u8 *svgData, size_t svgSize, u32 width, u32 
     RasterizationBackend backend = getBestBackend(policy, svgData, svgSize);
     switch (backend) {
         case OS_RASTERIZATION:
-#ifdef WIN32
+#ifdef _WIN64
             return D2DVectorSVGLoader(
                 svgData, svgSize, width, height, outRGBA
             );

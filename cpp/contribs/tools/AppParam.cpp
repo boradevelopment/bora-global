@@ -2,74 +2,118 @@
 #include "AppParam.h"
 
 
-std::unordered_map<std::string, ParamMeta> AppParam::params;
-std::unordered_map<std::string, std::string> AppParam::aliasMap;
-
-void AppParam::registerParam(std::string key, std::vector<std::string> aliases, std::string description) {
+// inline std::unordered_map<std::string, ParamMeta> AppParam::params;
+// inline std::unordered_map<std::string, std::string> AppParam::aliasMap;
+bool AppParam::registerParam(std::string key, std::vector<std::string> aliases, std::string description) {
     ParamMeta meta;
     meta.key = key;
     meta.aliases = aliases;
     meta.description = description;
 
     params[key] = meta;
+    if (key.length() >= 4) aliasMap["--" + key] = key;
+    else aliasMap["-" + key] = key;
 
     for (const auto& alias : aliases) {
         aliasMap[alias] = key;
     }
-
-    // Also register the full key name with -- prefix
-    if(key.length() > 4) aliasMap["--" + key] = key;
-    else aliasMap["-" + key] = key;
+    return true;
 }
-
 
 void AppParam::initialize(int argc, char** argv) {
     for (int i = 1; i < argc; ++i) {
-        std::wstring arg = utf8ToWstring(argv[i]);
+        std::string arg = argv[i];
+        std::string matchedKey = "";
+        std::string attachedVal = "";
+        bool isAttached = false;
+        bool hasEqualSign = false;
 
-        size_t equalPos = arg.find('=');
-        std::string rawKey = (equalPos != std::string::npos) ? wstringToUtf8(arg.substr(0, equalPos)) : wstringToUtf8(arg);
+        if (arg.find("=") != std::string::npos)
+        {
+            arg = arg.substr(0, arg.find("=")-1);
+            printf(arg.c_str());
+            hasEqualSign = true;
+        }
 
-        auto keyIt = aliasMap.find(rawKey);
-        if (keyIt != aliasMap.end()) {
-            std::string key = keyIt->second;
-            std::wstring value;
+        // 1. Check exact match in alias map (e.g. "-D", "--out")
+        auto itAlias = aliasMap.find(arg);
+        if (itAlias != aliasMap.end()) {
+            matchedKey = itAlias->second;
+        } else {
+            // 2. Check prefix match for attached parameters (e.g. "-DVALUE")
+            for (const auto& [alias, key] : aliasMap) {
+                if (alias.length() > 1 && arg.rfind(alias, 0) == 0) {
+                    matchedKey = key;
+                    attachedVal = arg.substr(alias.length());
+                    isAttached = true;
+                    break;
+                }
+            }
+        }
 
-            if (equalPos != std::string::npos) {
-                value = arg.substr(equalPos + 1);
-            } else if ((i + 1) < argc && argv[i + 1][0] != '-') {
-                value = utf8ToWstring(argv[++i]); // take next argument as value
-            } else {
-                value = L"true"; // treat as flag
+        if (!matchedKey.empty()) {
+            // Process named parameter (-D, --out, etc.)
+            ParamMeta& meta = params[matchedKey];
+            meta.isSet = true;
+
+            std::wstring valToStore;
+            if (isAttached) {
+                valToStore = toWString(attachedVal);
+            } else if (i + 1 < argc && argv[i + 1][0] != '-') {
+                valToStore = toWString(argv[++i]);
+            } else if(hasEqualSign) {
+                valToStore = toWString(arg.substr(arg.find("=") + 1));
+                printf(wstringToUtf8(valToStore).c_str());
+            }
+            else {
+                valToStore = L"1";
             }
 
-            params[key].value = value;
-            params[key].isSet = true;
+            meta.values.push_back(valToStore);
+            meta.value = valToStore;
         } else {
-            // If it looks like a param (--something) but isn't registered
-            if (!arg.empty() && arg[0] == '-') {
-                if(arg.length() > 4) aliasMap["--" + wstringToUtf8(arg)] = wstringToUtf8(arg);
-                aliasMap["-" + wstringToUtf8(arg)] = wstringToUtf8(arg);
-                --i;
-            } else {
-                // Positional argument
-                params[""].value = arg;
+            ParamMeta& posMeta = params[""];
+            posMeta.key = "";
+            posMeta.isSet = true;
+
+            std::wstring posVal = toWString(arg);
+            posMeta.values.push_back(posVal);
+
+            if (posMeta.value.empty()) {
+                posMeta.value = posVal;
             }
         }
     }
-
 }
 
 std::wstring AppParam::get(const std::string& key) {
     auto it = params.find(key);
-    if (it != params.end()) {
-        return it->second.value;
-    }
+    if (it != params.end()) return it->second.value;
     return L"";
 }
 
- const std::unordered_map<std::string, ParamMeta>& AppParam::getAll() {
-    return params;
+std::vector<std::wstring> AppParam::getValues(const std::string& key) {
+    auto it = params.find(key);
+    if (it != params.end()) return it->second.values;
+    return {};
+}
+
+std::unordered_map<std::wstring, std::wstring> AppParam::getDefinitions(const std::string& key) {
+    std::unordered_map<std::wstring, std::wstring> defs;
+    auto rawValues = getValues(key);
+
+    for (const auto& v : rawValues) {
+        auto eqPos = v.find(L'=');
+        if (eqPos != std::wstring::npos) {
+            std::wstring macroName = v.substr(0, eqPos);
+            std::wstring macroVal = v.substr(eqPos + 1);
+            defs[macroName] = macroVal;
+        } else {
+            // E.g. -DFOO defaults to FOO = 1
+            defs[v] = L"1";
+        }
+    }
+    return defs;
 }
 
 bool AppParam::has(const std::string& key) {
@@ -77,7 +121,9 @@ bool AppParam::has(const std::string& key) {
     return it != params.end() && it->second.isSet;
 }
 
-
+const std::unordered_map<std::string, ParamMeta>& AppParam::getAll() {
+    return params;
+}
 std::vector<std::wstring> AppParam::getArray(const std::string& key) {
     auto it = params.find(key);
     if (it == params.end()) return {};

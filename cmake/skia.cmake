@@ -1,5 +1,4 @@
 include(ExternalProject)
-
 include_directories(${SKIA_SOURCE_DIR})
 
 # Compiler flags
@@ -37,7 +36,9 @@ ExternalProject_Add(
         SOURCE_DIR ${SKIA_SOURCE_DIR}
         BINARY_DIR ${SKIA_SOURCE_DIR}
 
-        CONFIGURE_COMMAND
+        CONFIGURE_COMMAND ""
+
+        BUILD_COMMAND
         ${SHELL_CMD} 
         "${SKIA_SOURCE_DIR}/build_all${SKIA_SUFFIX}${SCRIPT_EXT}" 
         "${SKIA_BUILD_DIR}" 
@@ -46,9 +47,7 @@ ExternalProject_Add(
         "${ASAN_PREFIX}"
 
         INSTALL_COMMAND ""
-        BUILD_COMMAND ""
-
-        USES_TERMINAL_CONFIGURE true
+        USES_TERMINAL_BUILD true
 )
 
 ExternalProject_Add(
@@ -56,8 +55,9 @@ ExternalProject_Add(
         SOURCE_DIR ${SKIA_SOURCE_DIR}
         BINARY_DIR ${SKIA_SOURCE_DIR}
 
+        CONFIGURE_COMMAND ""
 
-        CONFIGURE_COMMAND
+        BUILD_COMMAND
         ${SHELL_CMD} 
         "${SKIA_SOURCE_DIR}/build_all${SKIA_SUFFIX}${SCRIPT_EXT}" 
         "${SKIA_BUILD_DIR}" 
@@ -65,11 +65,9 @@ ExternalProject_Add(
         "${ASAN_CODE}" 
         "${ASAN_PREFIX}"
 
-
         INSTALL_COMMAND ""
-        BUILD_COMMAND ""
 
-        USES_TERMINAL_CONFIGURE true
+        USES_TERMINAL_BUILD true
 )
 
 

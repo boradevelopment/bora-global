@@ -2,11 +2,13 @@
 // Check LICENSE.md for more information regarding the BORA license.
 #ifdef BORA_UI_SUPPORT
 #include "GPUContextManager.h"
-#include "nGraphics/bnGraphicsD3D12.h"
+
+#include "common/SkiaVKContextCreator.h"
+#include "common/SkiaVKRenderer.h"
 #include "nWindow/bnWindow.h"
 #include "darwin/SkiaMTLContextCreator.h"
 
-inline std::unordered_map<void*, sk_sp<GaneshGPUContextType>> GPUContextManager::windowContexts;
+inline std::unordered_map<void*, sk_sp<GrDirectContext>> GPUContextManager::windowContexts;
 
 sk_sp<GrDirectContext> GPUContextManager::getGaneshHeadlessContext() {
     return nullptr;
@@ -35,6 +37,18 @@ sk_sp<GrDirectContext> GPUContextManager::getGaneshContextForWindow(const bnWind
         }
     }
 #endif
+
+    if (window->choice == VULKAN)
+    {
+        if (windowContexts[window->handle]) {
+            return windowContexts[window->handle];
+        } else {
+            windowContexts[window->handle] = SkiaVKContextCreator::createContextFromWindow(window);
+            return windowContexts[window->handle];
+        }
+    }
+
+
     return nullptr;
 }
 

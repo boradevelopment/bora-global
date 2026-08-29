@@ -43,7 +43,7 @@ struct SvgFeatures {
     bool isLarge = false;
 };
 
-#ifdef WIN32
+#ifdef _WIN64
 #include <d3d11_3.h>
 #include <d2d1_3.h>
 #include <DirectXMath.h>
@@ -75,7 +75,7 @@ public:
     );
 private:
     static RasterizationBackend getBestBackend(RasterizationPolicy policy, const u8* svgData, size_t svgSize);
-#ifdef WIN32
+#ifdef _WIN64
     inline  static D3D_FEATURE_LEVEL d3dFeatureLevel;
     inline static Microsoft::WRL::ComPtr<ID3D11Device> device;
     inline static Microsoft::WRL::ComPtr<ID3D11DeviceContext> context;
@@ -98,7 +98,7 @@ private:
 
     static bool supportsOSRasterization()
     {
-#ifdef _WIN32
+#ifdef _WIN64
         return true; // Direct2D SVG supported (Win10+)
 #else
         return false;

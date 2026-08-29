@@ -3,7 +3,7 @@
 #include "DynamicLibrary.h"
 
 DynamicLibrary::DynamicLibrary(const wchar_t* path) : libraryHandle(nullptr) {
-#ifdef WIN32
+#ifdef _WIN64
     libraryHandle = LoadLibraryW(path);
 #elif defined(__linux__)
     libraryHandle = dlopen(path, RTLD_LAZY);
@@ -15,7 +15,7 @@ bool DynamicLibrary::hasOpened() const {
 }
 
 void* DynamicLibrary::getProcAddress(const char* procName) const {
-#ifdef WIN32
+#ifdef _WIN64
     return reinterpret_cast<void*>(GetProcAddress(libraryHandle, procName));
 #elif defined(__linux__)
     return dlsym(libraryHandle, procName);
@@ -23,7 +23,7 @@ void* DynamicLibrary::getProcAddress(const char* procName) const {
 }
 
 void DynamicLibrary::close() {
-#ifdef WIN32
+#ifdef _WIN64
     FreeLibrary(libraryHandle);
 #elif defined(__linux__)
     dlclose(libraryHandle);

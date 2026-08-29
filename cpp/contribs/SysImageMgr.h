@@ -16,7 +16,7 @@
 #ifdef BORA_UI_SUPPORT
 #ifndef BORA_SYSIMAGEMGR_H
 #define BORA_SYSIMAGEMGR_H
-#if WIN32
+#ifdef _WIN64
 #include <fstream>
 #include <wincodec.h>
 #include <wincodecsdk.h>
@@ -55,7 +55,7 @@ public:
     static SysIcon CreateIcon(const u8* imageData, size_t dataSize, std::pair<int, int> size);
     static SysImage CreateImage(sVec<u8> bytes);
     static bool SaveIcon(SysIcon icon, const wchar_t* path, std::vector<std::pair<int, int>> sizes = {});
-#if WIN32 // Win32 exclusive
+#if _WIN64 // Win32 exclusive
 private:
     static ULONG_PTR gdiplusToken;
 #endif

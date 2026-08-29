@@ -48,7 +48,7 @@ public:
     virtual void BindBlendState(IBlendState*, const float blendFactor[4], uint sampleMask = 0xFFFFFFFF) {};
     virtual void BindRenderTarget(IRenderTarget*, IDepthStencil* = nullptr) {};
     virtual void ClearRenderTarget(IRenderTarget* target, const float color[4]) {};
-    virtual void ClearDepthStencil(IDepthStencil* target, float depth, uint stencil) {};
+    virtual void ClearDepthStencil(IDepthStencil* target, float depth, u8 stencil) {};
     virtual void DispatchCompute(uint x, uint y, uint z) {};
     virtual void CopyToBuffer(IBuffer* buffer, void* data, size_t size) {};
     virtual void Draw(PrimitiveType type, size_t vertexCount, size_t vertexOffset = 0) {};

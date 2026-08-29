@@ -333,7 +333,7 @@ bool V2Header::writeV2HeaderToFile(const V2Header& header, FILE* outputFile, std
     // Serialize V2Header metadata
     fwrite(wstringToUtf8(header.version).c_str(), sizeof(char), strlen(wstringToUtf8(header.version).c_str()) + 1, outputFile);
     fwrite(wstringToUtf8(header.file).c_str(), sizeof(char), strlen(wstringToUtf8(header.file).c_str()) + 1, outputFile);
-    fwrite(wstringToUtf8(header.warn).c_str(), sizeof(char), strlen(wstringToUtf8(header.warn).c_str())+ 1, outputFile);
+    // fwrite(wstringToUtf8(header.warn).c_str(), sizeof(char), strlen(wstringToUtf8(header.warn).c_str())+ 1, outputFile);
     fwrite(&header.encrypted, sizeof(header.encrypted), 1, outputFile);
     fwrite(&header.size, sizeof(uint64_t), 1, outputFile);
     fwrite(&header.sizeRegular, sizeof(uint64_t), 1, outputFile);
@@ -402,6 +402,12 @@ bool V2Header::readV2HeaderFromFile(std::ifstream& file, __int64 startPos, __int
             return false;
         }
 
+        // read comment from first line of file
+        file.seekg(startPos, std::ios::beg);
+        std::string warning;
+        std::getline(file, warning);
+        this->warn = utf8ToWstring(warning);
+
         __int64 dataSize = endPos - startPos;
         if (dataSize <= 0) {
             std::cerr << "Invalid range specified!" << std::endl;
@@ -410,10 +416,8 @@ bool V2Header::readV2HeaderFromFile(std::ifstream& file, __int64 startPos, __int
 
         // Seek to the start position
         file.seekg(startPos, std::ios::beg);
-
         readString(file, this->version);
         readString(file, this->file);
-        readString(file, this->warn);
 
         // Read fixed-size data
         file.read(reinterpret_cast<char*>(&this->encrypted), sizeof(this->encrypted));
@@ -424,7 +428,6 @@ bool V2Header::readV2HeaderFromFile(std::ifstream& file, __int64 startPos, __int
         // Read length-prefixed strings
         readLengthPrefixedString(file, this->author);
         readLengthPrefixedString(file, this->comment);
-
         file.read(reinterpret_cast<char*>(&this->totalFiles), sizeof(this->totalFiles));
         readLengthPrefixedString(file, this->compressionMethod);
 
@@ -530,17 +533,21 @@ bool V2Header::readV2FileFromFile(std::ifstream& file, V2File v2file, const char
 //                decryptUint8(buffer, ivStr, keyStr);
 //            }
 //        }
-        if (v2file.isCompressionChunked) {
-            decompress_memoryVChunk(buffer, v2file.compressionChunksSizes, v2file.regularsize);
-        }
-        else {
-            decompress_memoryV(buffer, v2file.regularsize);
+
+        if (v2file.compressedSize > 0)
+        {
+            if (v2file.isCompressionChunked) {
+                decompress_memoryVChunk(buffer, v2file.compressionChunksSizes, v2file.regularsize);
+            }
+            else {
+                decompress_memoryV(buffer, v2file.regularsize);
+            }
         }
 
-        std::wstring opath = L"TAZ_"+ this->file + L"\\" + v2file.file;
+        std::wstring opath = L"TAZA_"+ this->file + L"\\" + v2file.file;
         createDirectories(opath);
 
-#if WIN32
+#ifdef _WIN64
          std::ofstream outFile(L"./" + opath, std::ios::binary);
 #else
         std::ofstream outFile("./" + wstringToUtf8(opath), std::ios::binary);
@@ -610,11 +617,14 @@ std::vector<uint8_t> V2Header::getV2File(std::ifstream& file, V2File v2file, con
             return buffer;
         }
 
-        if (v2file.isCompressionChunked) {
-            decompress_memoryVChunk(buffer, v2file.compressionChunksSizes, v2file.regularsize);
-        }
-        else {
-            decompress_memoryV(buffer, v2file.regularsize);
+        if (v2file.compressedSize > 0) // if 0, its not compressed.
+        {
+            if (v2file.isCompressionChunked) {
+                decompress_memoryVChunk(buffer, v2file.compressionChunksSizes, v2file.regularsize);
+            }
+            else {
+                decompress_memoryV(buffer, v2file.regularsize);
+            }
         }
         
         return buffer;
@@ -648,7 +658,7 @@ void V2Header::logV2Header()
 
     tm fileTM;
     std::time_t fileTime = std::time(nullptr);
-#if WIN32
+#ifdef _WIN64
     localtime_s(&fileTM, &fileTime);
 #elif __linux__|| __APPLE__
     localtime_r(&fileTime, &fileTM);
@@ -670,7 +680,7 @@ void V2Header::logV2Header()
 
         tm timeInfo;
 
-#if WIN32
+#ifdef _WIN64
         localtime_s(&timeInfo, &creationDate);
 #elif __linux__ || __APPLE__
         localtime_r(&creationDate, &timeInfo);
@@ -689,13 +699,42 @@ void V2Header::logV2Header()
     std::wcout << L"Compression Method: " << compressionMethod << "\n";
     std::wcout << L"Warning: " << warn << "\n";
 
+    std::wcout << "==== Custom Variables ====\n";
+    for (const auto& [variableName, val] : customVariables) {
+        std::wcout << variableName << ": ";
+
+        if (std::holds_alternative<std::string>(val)) {
+            const std::string& s = std::get<std::string>(val);
+            std::wcout << utf8ToWstring(s) << std::endl;
+        }
+        else if (std::holds_alternative<int>(val)) {
+            int v = std::get<int>(val);
+            std::wcout << v << std::endl;
+        } else if (std::holds_alternative<float>(val)) {
+            float v = std::get<float>(val);
+            std::wcout << v << std::endl;
+        } else if (std::holds_alternative<double>(val)) {
+            double v = std::get<double>(val);
+            std::wcout << v << std::endl;
+        } else if (std::holds_alternative<bool>(val)) {
+            bool v = std::get<bool>(val);
+            std::wcout << v << std::endl;
+        } else if (std::holds_alternative<uint64_t>(val)) {
+            uint64_t v = std::get<uint64_t>(val);
+            std::wcout << v << std::endl;
+        } if (std::holds_alternative<std::wstring>(val)) {
+            const std::wstring& ws = std::get<std::wstring>(val);
+            std::wcout << ws << std::endl;
+        }
+    }
+
     std::wcout << "\n==== Files Metadata ====\n";
     for (const auto& [fileName, file] : files) {
 
         tm timeInfoCreate;
         tm timeInfoModify;
         tm timeInfoAccess;
-#if WIN32
+#ifdef _WIN64
         localtime_s(&timeInfoCreate, &file.creationDate);
         localtime_s(&timeInfoModify, &file.modificationDate);
         localtime_s(&timeInfoAccess, &file.accessDate);

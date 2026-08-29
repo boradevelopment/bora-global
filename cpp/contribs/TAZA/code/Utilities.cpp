@@ -1,6 +1,6 @@
 #include "Utilities.h"
 //#include <dirent/dirent.h> - DEPRECATED DUE TO PLATFORM ISSUES
-#if WIN32
+#ifdef _WIN64
 #include "Windows.h"
 #else
 #include <fcntl.h>
@@ -191,7 +191,7 @@ std::size_t getFileSize(const std::wstring& filename) {
     return static_cast<std::size_t>(file.tellg());
 }
 std::vector<uint8_t> readFileWithStream(const std::wstring& filename) {
-#if WIN32
+#ifdef _WIN64
     std::ifstream file(filename, std::ios::binary);
 #else
     std::ifstream file(wstringToUtf8(filename), std::ios::binary);
@@ -227,7 +227,7 @@ std::vector<uint8_t> readFile(const std::string& filename) {
     return buffer;
 }
 std::vector<uint8_t> readFileWithMmap(const std::wstring& filename) {
-#if WIN32
+#ifdef _WIN64
     // Convert std::string to LPCWSTR (wide string for Windows API)
     std::wstring wFilename(filename.begin(), filename.end());
 
@@ -333,7 +333,7 @@ std::vector<uint8_t> readFileRange(const std::wstring& filename, std::streampos 
     }
 
     // Open the file in binary mode
-#if WIN32
+#ifdef _WIN64
     std::ifstream file(filename, std::ios::binary);
 #else
     std::ifstream file(wstringToUtf8(filename), std::ios::binary);
@@ -402,7 +402,7 @@ size_t getRecommendedChunkSize(size_t fileSize, int type) {
 }
 
 std::string wstringToUtf8(const std::wstring& wstr) {
-#ifdef _WIN32
+#ifdef _WIN64
     if (wstr.empty()) return {};
     int size_needed = WideCharToMultiByte(CP_UTF8, 0, wstr.data(), (int)wstr.size(), nullptr, 0, nullptr, nullptr);
     std::string result(size_needed, '\0');
@@ -420,8 +420,27 @@ std::string wstringToUtf8(const std::wstring& wstr) {
 #endif
 }
 
+std::string wcharToUtf8(const wchar_t* src) {
+#ifdef _WIN64
+    if (wstr.empty()) return {};
+    size_t len = std::wcsrtombs(nullptr, &src, 0, &state);
+    int size_needed = WideCharToMultiByte(CP_UTF8, 0, src, (int)len, nullptr, 0, nullptr, nullptr);
+    std::string result(size_needed, '\0');
+    WideCharToMultiByte(CP_UTF8, 0, src, (int)len, result.data(), size_needed, nullptr, nullptr);
+    return result;
+#else
+    // On POSIX, wchar_t is already Unicode
+    std::mbstate_t state{};
+    size_t len = std::wcsrtombs(nullptr, &src, 0, &state);
+    if (len == (size_t)-1) throw std::runtime_error("Conversion error");
+    std::string result(len, '\0');
+    std::wcsrtombs(result.data(), &src, len, &state);
+    return result;
+#endif
+}
+
 std::wstring utf8ToWstring(const std::string& str) {
-#ifdef _WIN32
+#ifdef _WIN64
     if (str.empty()) return {};
     int size_needed = MultiByteToWideChar(CP_UTF8, 0, str.data(), (int)str.size(), nullptr, 0);
     std::wstring result(size_needed, L'\0');

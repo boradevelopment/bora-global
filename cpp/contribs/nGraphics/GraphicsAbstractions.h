@@ -3,6 +3,14 @@
 #pragma once
 #include "nCommon/Resources.h"
 
+#if defined(Always)
+  #undef Always
+#endif
+
+#if defined(None)
+  #undef None
+#endif
+
 typedef struct Extent2D {
     uint32_t    width;
     uint32_t    height;
@@ -104,6 +112,7 @@ public:
     ImageLayout explicitLayout;
 };
 
+// todo: sort this shit out
 struct ShaderDesc {
     enum class Type {
         Vertex,       // VS
@@ -288,12 +297,12 @@ enum class PrimitiveType {
 
 
 struct ViewPort {
-    i32 x;
-    i32 y;
-    long width;
-    long height;
-    long minDepth;
-    long maxDepth;
+    float x;
+    float y;
+    float width;
+    float height;
+    float minDepth;
+    float maxDepth;
 };
 
 struct ViewPortDesc {
@@ -586,7 +595,7 @@ inline int GetFallbackChoice(GraphicsChoice choice) {
     }
 #elif defined(__linux__)
     // Linux
-    switch (fallback) {
+    switch (choice) {
     case 0: return GraphicsChoice::VULKAN;
     case 1: return GraphicsChoice::OPENGL;
     default: return GraphicsChoice::NONE;
@@ -699,7 +708,7 @@ struct IGraphicsDeviceConfig {
     bool enableMSAA = false;
     int msaaSamples = 1;
     rgba clearColor = { 0, 0, 0, 1 };
-    int framesInFlight = 4;   
+    u32 framesInFlight = 4;
     bool enableValidation = true;
     bool vsync = false;
     bool enableDepth = false;
@@ -814,4 +823,3 @@ public:
 
     virtual void SetMarker(const char* name, uint32_t color = 0xFFFFFFFF) = 0;
 };
-

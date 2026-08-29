@@ -4,9 +4,8 @@
 #include "SysImageMgr.h"
 #include "SVGRasterizer.h"
 
-#if WIN32
+#ifdef _WIN64
 ULONG_PTR SysImageMgr::gdiplusToken;
-
 
 HRESULT WICConvertBitmapSourceToHBITMAP(
         IWICBitmapSource* pBitmapSource,
@@ -210,7 +209,7 @@ HICON LoadNoGDIIcon(const BYTE* data, size_t size, std::pair<int, int> imageSize
 }
 
 SysImageMgr::SysImageMgr() {
-#if WIN32
+#ifdef _WIN64
     HRESULT hr = CoInitializeEx(nullptr, COINIT_APARTMENTTHREADED);
     if (FAILED(hr)) {
         return;

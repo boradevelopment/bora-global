@@ -7,20 +7,30 @@
 #pragma once
 #ifdef BORA_UI_SUPPORT
 #include <memory>
+
+#include "nGraphics/bnGraphicsVK.h"
+#include "nWindow/bnWindow.h"
+#include "skia/GPUContextManager.h"
+#include "skia/SkiaCPURenderer.h"
+#include "skia/common/SkiaVKRenderer.h"
 #include "skia/interfaces/IGUIRenderer.h"
 
 class GUIRoot {
 public:
-    GUIRoot(std::unique_ptr<IGUIRenderer> renderer)
-          : renderer(std::move(renderer)) {}
+    GUIRoot(bnWindow* window) : window(window)
+    {
 
-    void render(int width, int height) {
-        SkCanvas* canvas = renderer->beginFrame(width, height);
+    };
 
-        renderer->endFrame();
+    static IGUIRenderer* createCPURenderer()
+    {
+        return new SkiaCPURenderer();
+        // renderer = std::make_unique<SkiaCPURenderer>();
     }
 
+    IGUIRenderer* createGPURenderer();
+
 private:
-    std::unique_ptr<IGUIRenderer> renderer;
+    bnWindow* window;
 };
 #endif

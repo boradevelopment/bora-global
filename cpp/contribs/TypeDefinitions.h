@@ -3,12 +3,13 @@
 #if defined(__cplusplus)
 #include <climits> // For integer limits
 #include <cfloat>  // For FLT_MAX
-#if __linux__ || __APPLE__
+#include "logging/LogManager.h"
+#include "logging/LogStream.h"
+#if __APPLE__
 typedef signed long int __int64;
 #endif
 
 // C and C++ shared types
-#include <cstdint>
 typedef uint32_t u32;
 typedef uint8_t  u8;
 typedef uint64_t u64;  // This is guaranteed to be 8 bytes
@@ -17,12 +18,12 @@ typedef int8_t   i8;
 typedef int16_t  i16;
 typedef int32_t  i32;
 typedef int64_t  i64;
-
+typedef unsigned int uint;
 // extras
 typedef u8 byte;
 
 
-#if WIN32
+#ifdef _WIN64
 #define ftellout(out) _ftelli64(out);
 #elif __linux__
 #define ftellout(out) ftello64(out);
@@ -83,7 +84,7 @@ struct rgb {
 
     rgb& operator=(const rgba& color); 
 
-    bool isDefault() const {
+    [[nodiscard]] bool isDefault() const {
         return r == 0 && g == 0 && b == 0;
     }
 };
@@ -112,7 +113,8 @@ struct Vertex {
 };
 
 // Win32 stuff
-#ifdef WIN32
+struct NativeCursorHandle;
+#ifdef _WIN64
 #include "Windows.h"
 #include <string>
 #include <vector>
@@ -136,15 +138,43 @@ inline std::wstring Utf8ToWide(const char* utf8) {
 #define GET_Y_PARAM(lp) ((int)(short)HIWORD(lp))
 #endif
 typedef HWND SysHandle;
+using ConstSysHandle = const HWND;
 typedef HMODULE DynLibraryHandle;
 #elif  defined(__APPLE__)
 typedef void* SysHandle;
 typedef void* DynLibraryHandle;
 #elif defined(__linux__)
-typedef int SysHandle;
+#if defined(BORA_HAS_WAYLAND) || defined(BORA_HAS_X11)
+// nuisiance
+#if defined(Always)
+#undef Always
+#endif
+#if defined(None)
+#undef None
+#endif
+
+#define BORA_LINUX_WINDOW_SUPPORT
+enum class DisplayServerType {
+    Unknown,
+#ifdef BORA_HAS_WAYLAND
+    Wayland,
+#endif
+#ifdef BORA_HAS_X11
+    X11
+#endif
+};
+
+struct LinuxWindowHandle;
+using SysHandle = LinuxWindowHandle*;
+using ConstSysHandle = const LinuxWindowHandle*;
+#else
+using SysHandle = void*;
+using ConstSysHandle = const void*;
+#endif
 typedef void* DynLibraryHandle;
 #endif
 inline sUnorderedMap<SysHandle, float> gDeltaTimes;
 #endif
+
 
 

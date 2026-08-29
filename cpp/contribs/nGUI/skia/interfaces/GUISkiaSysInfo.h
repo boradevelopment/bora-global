@@ -4,13 +4,13 @@
  * FileName: GUISysInfo.h
  * Purpose: Includes important information for UI classes to use globally
  */
-#ifdef BORA_UI_SUPPORT
 #pragma once
+#ifdef BORA_UI_SUPPORT
 #include "include/gpu/ganesh/GrDirectContext.h"
 #ifdef WIN32
 #include <d3d11.h>
 #include "include/gpu/ganesh/d3d/GrD3DBackendContext.h"
-#include <include/gpu/ganesh/gl/mac/GrGLMakeWinInterface.h>
+#include <include/gpu/ganesh/gl/win/GrGLMakeWinInterface.h>
 typedef GrDirectContext GaneshGPUContextType;
 #elif defined(__APPLE__)
 #import <Metal/Metal.h>

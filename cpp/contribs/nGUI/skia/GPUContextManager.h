@@ -12,8 +12,8 @@
 class bnWindow;
 class GPUContextManager {
 public:
-    static sk_sp<GaneshGPUContextType> getGaneshHeadlessContext();
-    static sk_sp<GaneshGPUContextType> getGaneshContextForWindow(const bnWindow* window);
+    static sk_sp<GrDirectContext> getGaneshHeadlessContext();
+    static sk_sp<GrDirectContext> getGaneshContextForWindow(const bnWindow* window);
     static void shutdownGaneshContextForWindow(const bnWindow* window);
     bool isGPUAvailable() const { return headlessContext != nullptr; }
 private:
@@ -26,7 +26,7 @@ IDXGIAdapter1* adapter);
 
 #endif
 
-    static sk_sp<GaneshGPUContextType> headlessContext;
-    static std::unordered_map<void*, sk_sp<GaneshGPUContextType>> windowContexts;
+    static sk_sp<GrDirectContext> headlessContext;
+    static std::unordered_map<void*, sk_sp<GrDirectContext>> windowContexts;
 };
 #endif

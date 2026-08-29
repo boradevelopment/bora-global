@@ -37,4 +37,5 @@ std::vector<uint8_t> readFileRange(const std::string& filename, std::streampos s
 std::vector<uint8_t> readFileMain(const std::wstring& filename, std::size_t size = 5 * 1024 * 1024);
 size_t getRecommendedChunkSize(size_t fileSize, int type = 0);
 std::string wstringToUtf8(const std::wstring& wstr);
+std::string wcharToUtf8(const wchar_t* src);
 std::wstring utf8ToWstring(const std::string& str);

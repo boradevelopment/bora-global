@@ -48,7 +48,7 @@ struct V2Archive {
     // Creates and processes file
     int addFile(std::wstring name, std::wstring filename = L"");
     int addFile(std::vector<uint8_t> data, std::wstring name);
-    V2File* addFileAndGet(std::wstring name, std::wstring filename);
+    V2File* addFileAndGet(std::wstring path, std::wstring filename);
     V2File* addFileAndGet(std::vector<uint8_t> data, std::wstring name = L"");
 
 
