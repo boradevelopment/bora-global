@@ -84,25 +84,25 @@ public:
         @param encoding specifies the encoding of the text array.
         @return        new textblob or nullptr
      */
-    virtual ResourceHandle<IGUIFontTextBlob> createTextBlobPositionH(const void* text, size_t byteLength,
-                              std::span<const float> xpos, float constY,
-                              const IGUIFont& font,
-                              TextEncoding encoding = TextEncoding::kUTF8) = 0;
-
-    /** Returns a textblob built from a single run of text with positions.
-        This is equivalent to using SkTextBlobBuilder and calling allocRunPos().
-        Returns nullptr if byteLength is zero.
-
-        @param text        character code points or glyphs drawn (based on encoding)
-        @param byteLength  byte length of text array
-        @param pos     array of positions, must contain values for all of the character points.
-        @param font    SkFont used for this run
-        @param encoding specifies the encoding of the text array.
-        @return        new textblob or nullptr
-     */
-    virtual ResourceHandle<IGUIFontTextBlob> createTextBlobPosition(const void* text, size_t byteLength,
-                                         std::span<const WindowPoint> pos, const IGUIFont* font,
-                                         TextEncoding encoding = TextEncoding::kUTF8) = 0;
+//     virtual ResourceHandle<IGUIFontTextBlob> createTextBlobPositionH(const void* text, size_t byteLength,
+//                               std::span<const float> xpos, float constY,
+//                               const IGUIFont& font,
+//                               TextEncoding encoding = TextEncoding::kUTF8) = 0;
+//
+//     /** Returns a textblob built from a single run of text with positions.
+//         This is equivalent to using SkTextBlobBuilder and calling allocRunPos().
+//         Returns nullptr if byteLength is zero.
+//
+//         @param text        character code points or glyphs drawn (based on encoding)
+//         @param byteLength  byte length of text array
+//         @param pos     array of positions, must contain values for all of the character points.
+//         @param font    SkFont used for this run
+//         @param encoding specifies the encoding of the text array.
+//         @return        new textblob or nullptr
+//      */
+//     virtual ResourceHandle<IGUIFontTextBlob> createTextBlobPosition(const void* text, size_t byteLength,
+//                                          std::span<const WindowPoint> pos, const IGUIFont* font,
+//                                          TextEncoding encoding = TextEncoding::kUTF8) = 0;
 
     // Native Escape Hatch (for backend-specific extensions)
     [[nodiscard]] virtual void* GetNativeHandle() const = 0;

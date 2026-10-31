@@ -11,8 +11,22 @@
 #include <mutex>
 #include "nGraphics/bnGraphicsVK.h"
 
+std::vector<SkiaVKRenderer*> SkiaVKRenderer::activeRenderers;
+std::mutex SkiaVKRenderer::globalMutex;
+
 SkiaVKRenderer::SkiaVKRenderer(sk_sp<GrDirectContext> context, bnGraphicsVK *engine)
-    : context(std::move(context)), engine(engine) {}
+    : context(std::move(context)), engine(engine)
+{
+    std::lock_guard<std::mutex> lock(globalMutex);
+    activeRenderers.push_back(this);
+}
+
+SkiaVKRenderer::~SkiaVKRenderer()
+{
+    std::lock_guard<std::mutex> lock(globalMutex);
+    auto it = std::remove(activeRenderers.begin(), activeRenderers.end(), this);
+    activeRenderers.erase(it, activeRenderers.end());
+}
 
 sk_sp<SkSurface> SkiaVKRenderer::CreateSurfaceFromTexture(ITexture *texture) {
     if (!texture) return nullptr;
@@ -55,9 +69,11 @@ IGUISurface* SkiaVKRenderer::createFrameSurface(ResourceHandle<ITexture> texture
     return createFrameSurface({}, texture);
 }
 
-IGUISurface* SkiaVKRenderer::createFrameSurface(const WindowRect& rect, ResourceHandle<ITexture> texture) {
-    ITexture* backBuffer = texture.Exists() ? texture.Get() : engine->GetSwapchainImage();
+IGUISurface* SkiaVKRenderer::createFrameSurface(const UXRect& rect, ResourceHandle<ITexture> texture) {
+    TextureVK* backBuffer = texture.Exists() ? (TextureVK*)texture.Get() : (TextureVK*)engine->GetSwapchainImage();
     if (!backBuffer) return nullptr;
+    VulkanSurface vkSurface;
+    vkSurface.buffer = backBuffer;
     std::lock_guard<std::mutex> lock(m_mutex);
     auto localRect = rect;
     if (localRect.IsEmpty())
@@ -72,53 +88,77 @@ IGUISurface* SkiaVKRenderer::createFrameSurface(const WindowRect& rect, Resource
     }
 
     // 1. Check existing cache
-    auto it = m_surfaceCache.find(backBuffer);
-    if (it != m_surfaceCache.end()) {
-        auto* cachedSurface = it->second.get();
-        if (cachedSurface->GetWidth() == rect.GetWidth() && cachedSurface->GetHeight() == rect.GetHeight()) {
-            surfaces.push_back(cachedSurface);
-            return cachedSurface;
+    for (auto& cachedSurface : surfaces)
+    {
+        auto existingRect = cachedSurface.uxSurface->GetRect();
+        if (!texture && existingRect.GetWidth() >= localRect.GetWidth() &&
+          existingRect.GetHeight() >= localRect.GetHeight() && backBuffer == cachedSurface.buffer) // reuse swapchain but make sure the images are the same
+        {
+            return cachedSurface.uxSurface.get();
         }
-        m_surfaceCache.erase(it);
     }
 
-    // 2. Wrap Vulkan Render Target
+    if (!texture)
+    { // we are using backBuffer so we need to switch layouts.
+        vkSurface.isSwapchain = true;
+        auto copyCmd = engine->BeginSingleTimeCommands(engine->copyPool);
+        copyCmd->PipelineBarrier(backBuffer, ImageLayout::RenderTarget, ImageAccessLayout::Write, ImageAccessLayout::Write);
+        engine->EndSingleTimeCommands(copyCmd);
+    }
+
+    GrBackendFormat backendFormat = GrBackendFormats::MakeVk(ToVkFormat(backBuffer->desc.format));
     GrVkImageInfo vkImageInfo = {};
-    vkImageInfo.fImage               = reinterpret_cast<VkImage>(backBuffer->GetNativeHandle());
+    if (vkSurface.uxSurface)
+    {
+        vkImageInfo.fAlloc = skgpu::VulkanAlloc();
+    } else
+    {
+        VkMemoryRequirements memReqs;
+        vkGetImageMemoryRequirements(engine->device, backBuffer->image, &memReqs);
+        vkImageInfo.fAlloc.fMemory = backBuffer->memory;
+        vkImageInfo.fAlloc.fOffset = 0;
+        vkImageInfo.fAlloc.fSize = memReqs.size;
+        vkImageInfo.fAlloc.fFlags = 0;
+    }
+    vkImageInfo.fImage               = backBuffer->image;
     vkImageInfo.fImageTiling         = VK_IMAGE_TILING_OPTIMAL;
     vkImageInfo.fImageLayout        = ToVkImageLayout(backBuffer->explicitLayout);
     vkImageInfo.fFormat              = ToVkFormat(backBuffer->desc.format);
-    vkImageInfo.fImageUsageFlags     = VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT | VK_IMAGE_USAGE_SAMPLED_BIT;
+    vkImageInfo.fImageUsageFlags     = VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT | VK_IMAGE_USAGE_TRANSFER_SRC_BIT | VK_IMAGE_USAGE_TRANSFER_DST_BIT | VK_IMAGE_USAGE_SAMPLED_BIT;
     vkImageInfo.fSampleCount         = 1;
     vkImageInfo.fLevelCount          = 1;
-    vkImageInfo.fCurrentQueueFamily   = VK_QUEUE_FAMILY_IGNORED;
+    vkImageInfo.fCurrentQueueFamily   = engine->familyIndices.graphicsFamily;
     vkImageInfo.fProtected           = GrProtected::kNo;
+    // check if engine families are different!!!
+    vkImageInfo.fSharingMode = VK_SHARING_MODE_EXCLUSIVE;
+    vkImageInfo.fYcbcrConversionInfo = {};
 
-    auto backendRT = GrBackendRenderTargets::MakeVk(localRect.GetWidth(), localRect.GetHeight(), vkImageInfo);
+    auto backendRT = GrBackendRenderTargets::MakeVk(backBuffer->desc.width, backBuffer->desc.height, vkImageInfo);
+
     SkSurfaceProps props(0, kUnknown_SkPixelGeometry);
     sk_sp<SkColorSpace> colorSpace = SkColorSpace::MakeSRGB();
 
-    auto surface = std::make_unique<SkiaSurface>(SkSurfaces::WrapBackendRenderTarget(
-        context.get(),
-        backendRT,
-        kTopLeft_GrSurfaceOrigin,
-        kRGBA_8888_SkColorType,
-        colorSpace,
-        &props,
-        nullptr,
-        nullptr
-    ));
+    auto skSurface = SkSurfaces::WrapBackendRenderTarget(
+    context.get(),
+    backendRT,
+    kTopLeft_GrSurfaceOrigin,
+    kBGRA_8888_SkColorType,
+    colorSpace,
+    &props
+    );
 
-    if (surface && surface->GetNativeHandle()) {
-        if (auto* canvas = surface->GetCanvas()) {
+    if (!skSurface) return nullptr;
+    vkSurface.uxSurface = std::make_unique<SkiaSurface>(rect, skSurface);
+
+    if (vkSurface.uxSurface && vkSurface.uxSurface->GetNativeHandle()) {
+        if (auto* canvas = vkSurface.uxSurface->GetCanvas()) {
             canvas->Save();
             canvas->Translate(static_cast<float>(localRect.left), static_cast<float>(localRect.top));
             canvas->ClipRect(localRect);
         }
 
-        IGUISurface* rawPtr = surface.get();
-        m_surfaceCache[backBuffer] = std::move(surface);
-        surfaces.push_back(rawPtr);
+        IGUISurface* rawPtr = vkSurface.uxSurface.get();
+        surfaces.push_back(std::move(vkSurface));
         return rawPtr;
     }
 
@@ -129,16 +169,21 @@ IGUISurface* SkiaVKRenderer::getLastFrameSurface() {
     std::lock_guard<std::mutex> lock(m_mutex);
     if (surfaces.empty()) return nullptr;
 
-    auto* surface = surfaces.back();
+    auto* surface = surfaces.back().uxSurface.get();
     return (surface && surface->GetNativeHandle()) ? surface : nullptr;
 }
 
-void SkiaVKRenderer::draw() {
-    std::lock_guard<std::mutex> lock(m_mutex);
-
-    for (IGUISurface* surface : surfaces) {
-        if (auto* canvas = surface->GetCanvas()) {
-            canvas->Restore();
+void SkiaVKRenderer::endframe()
+{
+    std::lock_guard<std::mutex> lock(globalMutex);
+    bool swapchainUsed = false;
+    for (auto renderer : activeRenderers)
+    {
+        for (auto& surface : renderer->surfaces) {
+            if (auto* canvas = surface.uxSurface->GetCanvas()) {
+                canvas->Restore();
+            }
+            swapchainUsed = surface.isSwapchain;
         }
     }
 
@@ -146,20 +191,24 @@ void SkiaVKRenderer::draw() {
         context->flushAndSubmit();
     }
 
-    // Pipeline barrier transition outside mutex if engine call manages its own sync
-    auto cmd = engine->BeginSingleTimeCommands(engine->copyPool);
-    cmd->PipelineBarrier(
-        engine->GetSwapchainImage(),
-        ImageLayout::RenderTarget,
-        ImageLayout::Present,
-        ImageAccessLayout::Present,
-        ImageAccessLayout::Present
-    );
-    engine->EndSingleTimeCommands(cmd);
-
-    // Clear active frame list (cached persistent surfaces remain alive in m_surfaceCache)
-    surfaces.clear();
+    if (swapchainUsed)
+    {
+        auto cmd = engine->BeginSingleTimeCommands(engine->copyPool);
+        cmd->PipelineBarrier(
+            engine->GetSwapchainImage(),
+            ImageLayout::Present,
+            ImageAccessLayout::Present,
+            ImageAccessLayout::Present
+        );
+        engine->EndSingleTimeCommands(cmd);
+    }
 }
+
+// void SkiaVKRenderer::draw() {
+//
+//     // Clear active frame list (cached persistent surfaces remain alive in m_surfaceCache)
+//     // surfaces.clear();
+// }
 
 // void SkiaVKRenderer::Clear() {
 //     IGUISurface* surface = getLastFrameSurface();
@@ -182,7 +231,6 @@ void SkiaVKRenderer::OnResize() {
     std::lock_guard<std::mutex> lock(m_mutex);
 
     surfaces.clear();
-    m_surfaceCache.clear();
 
     if (context) {
         context->flushAndSubmit(GrSyncCpu::kYes);

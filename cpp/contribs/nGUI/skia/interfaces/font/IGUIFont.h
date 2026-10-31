@@ -8,14 +8,16 @@
 #include <span>
 #include <cstdint>
 #include <cstddef>
+#include "nGUI/skia/interfaces/GUIAbstractions.h"
 #include "nWindow/bnWindowAbstracts.h"
+#include "nCommon/Resources.h"
 
 class IGUIFontTypeface;
 struct GUIPaint;
 struct GUIFontMetrics;
 
-template <typename T>
-class ResourceHandle;
+// template <typename T>
+// class ResourceHandle;
 
 enum class TextEncoding {
     kUTF8,
@@ -93,15 +95,15 @@ public:
 
     // Measurement & Layout
     virtual float measureText(const void* text, size_t byteLength, TextEncoding encoding,
-                              WindowRect* bounds = nullptr) const {
+                              UXRect* bounds = nullptr) const {
         return this->measureText(text, byteLength, encoding, bounds, nullptr);
     }
 
     virtual float measureText(const void* text, size_t byteLength, TextEncoding encoding,
-                              WindowRect* bounds, const GUIPaint* paint) const = 0;
+                              UXRect* bounds, const GUIPaint* paint) const = 0;
 
     virtual void getWidthsBounds(std::span<const uint16_t> glyphs, std::span<float> widths, 
-                                 std::span<WindowRect> bounds, const GUIPaint* paint) const = 0;
+                                 std::span<UXRect> bounds, const GUIPaint* paint) const = 0;
 
     virtual void getWidths(std::span<const uint16_t> glyphs, std::span<float> widths) const {
         this->getWidthsBounds(glyphs, widths, {}, nullptr);
@@ -113,13 +115,13 @@ public:
         return width;
     }
 
-    virtual void getBounds(std::span<const uint16_t> glyphs, std::span<WindowRect> bounds,
+    virtual void getBounds(std::span<const uint16_t> glyphs, std::span<UXRect> bounds,
                            const GUIPaint* paint) const {
         this->getWidthsBounds(glyphs, {}, bounds, paint);
     }
 
-    virtual WindowRect getBounds(uint16_t glyph, const GUIPaint* paint) const {
-        WindowRect bounds{};
+    virtual UXRect getBounds(uint16_t glyph, const GUIPaint* paint) const {
+        UXRect bounds{};
         this->getBounds({&glyph, 1}, {&bounds, 1}, paint);
         return bounds;
     }

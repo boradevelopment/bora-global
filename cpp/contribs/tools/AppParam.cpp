@@ -1,5 +1,5 @@
-#include <Utilities.h>
 #include "AppParam.h"
+#include "StringUtils.h"
 
 
 // inline std::unordered_map<std::string, ParamMeta> AppParam::params;
@@ -58,12 +58,12 @@ void AppParam::initialize(int argc, char** argv) {
 
             std::wstring valToStore;
             if (isAttached) {
-                valToStore = toWString(attachedVal);
+                valToStore = StringUtils::utf8ToWstring(attachedVal);
             } else if (i + 1 < argc && argv[i + 1][0] != '-') {
-                valToStore = toWString(argv[++i]);
+                valToStore = StringUtils::utf8ToWstring(argv[++i]);
             } else if(hasEqualSign) {
-                valToStore = toWString(arg.substr(arg.find("=") + 1));
-                printf(wstringToUtf8(valToStore).c_str());
+                valToStore = StringUtils::utf8ToWstring(arg.substr(arg.find("=") + 1));
+                // printf(StringUtils::utf8ToWstring(valToStore).c_str());
             }
             else {
                 valToStore = L"1";
@@ -76,7 +76,7 @@ void AppParam::initialize(int argc, char** argv) {
             posMeta.key = "";
             posMeta.isSet = true;
 
-            std::wstring posVal = toWString(arg);
+            std::wstring posVal = StringUtils::utf8ToWstring(arg);
             posMeta.values.push_back(posVal);
 
             if (posMeta.value.empty()) {

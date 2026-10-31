@@ -1,9 +1,9 @@
+#if defined(BORA_UI_SUPPORT) && defined(__APPLE__)
 #include <include/core/SkColorSpace.h>
 #include <include/gpu/ganesh/GrBackendSurface.h>
 #include "SkiaMTLRenderer.h"
 #include "nGraphics/bnGraphicsMTL.h"
 
-#if defined(BORA_UI_SUPPORT) && defined(__APPLE__)
 SkiaMTLRenderer::SkiaMTLRenderer(sk_sp<GrDirectContext> context, bnGraphicsMTL *engine) : context(context), engine(engine) {
 
 }
@@ -55,5 +55,4 @@ void SkiaMTLRenderer::Clear() {
 void SkiaMTLRenderer::PrepareForResize() {
 
 }
-
 #endif

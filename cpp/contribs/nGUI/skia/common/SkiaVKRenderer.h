@@ -15,24 +15,55 @@
 
 class bnGraphicsVK;
 
+struct VulkanSurface
+{
+    std::unique_ptr<IGUISurface> uxSurface = nullptr;
+    ITexture* buffer;
+    bool isSwapchain = false;
+
+    bool operator==(const VulkanSurface& other) const {
+        return uxSurface == other.uxSurface && buffer == other.buffer;
+    }
+};
+
+namespace std {
+    template <>
+    struct hash<VulkanSurface> {
+        size_t operator()(const VulkanSurface& s) const {
+            size_t h1 = std::hash<void*>{}(static_cast<void*>(s.uxSurface.get()));
+            size_t h2 = std::hash<void*>{}(static_cast<void*>(s.buffer));
+            return h1 ^ (h2 << 1);
+        }
+    };
+}
+
 class SkiaVKRenderer : public IGUIRenderer {
 public:
     SkiaVKRenderer(sk_sp<GrDirectContext> context, bnGraphicsVK* engine);
+    ~SkiaVKRenderer();
     sk_sp<SkSurface> CreateSurfaceFromTexture(ITexture* texture);
     void Flush();
-    IGUISurface* createFrameSurface(const WindowRect& rect, ResourceHandle<ITexture> texture) override;
+    IGUISurface* createFrameSurface(const UXRect& rect, ResourceHandle<ITexture> texture) override;
     IGUISurface* createFrameSurface(ResourceHandle<ITexture> texture) override;
     IGUISurface* getLastFrameSurface() override;
-    void draw() override;
-    void finalizeResources() override;
+    bool isCPU() override
+    {
+        return false;
+    };
+    void endframe() override;
+    void finalizeResources() override {};
     void OnResize() override;
 
 
 private:
-    std::unordered_map<ITexture*, std::unique_ptr<IGUISurface>> m_surfaceCache;
-    std::vector<IGUISurface*> surfaces;
-    sk_sp<GrDirectContext> context;
+    std::vector<VulkanSurface> surfaces;
     std::mutex m_mutex;
+
+    // Static global registry shared across all renderer instances
+    static std::vector<SkiaVKRenderer*> activeRenderers;
+    static std::mutex globalMutex;
+
+    sk_sp<GrDirectContext> context;
     bnGraphicsVK* engine;
 };
 #endif

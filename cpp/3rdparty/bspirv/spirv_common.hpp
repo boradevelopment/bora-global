@@ -1739,7 +1739,7 @@ struct Meta
 		{
 			Extended()
 			{
-				// MSVC 2013 workaround to init like this.
+				// MSVC 2013 workaround to core like this.
 				for (auto &v : values)
 					v = 0;
 			}

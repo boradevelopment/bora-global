@@ -15,7 +15,7 @@ public:
     static sk_sp<GrDirectContext> getGaneshHeadlessContext();
     static sk_sp<GrDirectContext> getGaneshContextForWindow(const bnWindow* window);
     static void shutdownGaneshContextForWindow(const bnWindow* window);
-    bool isGPUAvailable() const { return headlessContext != nullptr; }
+    static bool isGPUAvailable() { return headlessContext != nullptr; }
 private:
 
 #ifdef WIN32

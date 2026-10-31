@@ -813,6 +813,8 @@ public:
     virtual void ReleaseBuffer(IBuffer**) = 0;
     virtual void ReleaseTexture(ITexture**) = 0;
 
+    virtual sVec<u8> ReadPixelsOfTexture(ITexture* texture) = 0;
+
     virtual IDeviceContext* getContext() = 0;
     virtual IDevice* getDevice() = 0;
 

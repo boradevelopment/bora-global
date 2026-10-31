@@ -39,13 +39,11 @@ public:
     virtual void* GetNativeHandle() { return nullptr; };
     virtual void PipelineBarrier(
         ITexture* image,
-        ImageLayout oldLayout,
         ImageLayout newLayout,
         ImageAccessLayout srcAccessMask,
         ImageAccessLayout dstAccessMask) = 0;
     virtual void PipelineBarrierBatched( 
         ITexture* image,
-        ImageLayout oldLayout,
         ImageLayout newLayout,
         ImageAccessLayout srcAccessMask,
         ImageAccessLayout dstAccessMask) = 0;

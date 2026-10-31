@@ -5,8 +5,10 @@
  * Purpose: ?
 */
 #pragma once
-#include "GUIAbstractions.h"
-#include "IGUICanvas.h"
+// #include "GUIAbstractions.h"
+// #include "IGUICanvas.h"
+#include "nGUI/skia/interfaces/GUIAbstractions.h"
+#include "nGUI/skia/interfaces/IGUICanvas.h"
 #include "TypeDefinitions.h"
 #include "nCommon/Resources.h"
 

@@ -1,0 +1,33 @@
+if (CMAKE_BUILD_TYPE STREQUAL "Debug")
+    set(BUILD_TYPE Debug)
+else()
+    set(BUILD_TYPE Release)
+endif()
+
+if(CMAKE_SYSTEM_PROCESSOR MATCHES "x86_64|AMD64|amd64")
+    set(ARCH "x86_64")
+elseif(CMAKE_SYSTEM_PROCESSOR MATCHES "aarch64|ARM64|arm64")
+    set(ARCH "arm64")
+elseif(CMAKE_SYSTEM_PROCESSOR MATCHES "i386|i686|x86")
+    set(ARCH "x86")
+else()
+    set(ARCH "${CMAKE_SYSTEM_PROCESSOR}")
+endif()
+string(TOLOWER "${CMAKE_SYSTEM_NAME}" SYSTEM_NAME_LOWER)
+
+if(ENABLE_ASAN)
+    set(ASAN_PREFIX "ASAN")
+
+    if(MSVC)
+        # MSVC AddressSanitizer flags
+        set(ASAN_CODE "/fsanitize=address")
+    elseif(CMAKE_CXX_COMPILER_ID MATCHES "Clang|GNU")
+        # GCC / Clang AddressSanitizer flags
+        set(ASAN_CODE "-fsanitize=address")
+    else()
+        set(ASAN_CODE "")
+    endif()
+else()
+    set(ASAN_PREFIX "")
+    set(ASAN_CODE "")
+endif()

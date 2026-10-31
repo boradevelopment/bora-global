@@ -61,28 +61,29 @@ public:
         font->setEdging(IGUIFont::Edging::SubpixelAntiAlias);
         font->setHinting(FontHinting::kFull);
 
+
         return font;
     };
 
-    virtual ResourceHandle<IGUIFont>  getFont(u8* data,
+    ResourceHandle<IGUIFont>  getFont(u8* data,
            u64 size,
            GUIFontStyle style) override
     {
-
+        return nullptr;
     };
 
      ResourceHandle<IGUIFontTypeface>  getFontTypeface(const char* family,
             int size,
             GUIFontStyle style) override
     {
-
+         return nullptr;
     };
 
     ResourceHandle<IGUIFontTypeface> getFontTypeface(u8* data,
            u64 size,
            GUIFontStyle style) override
     {
-
+        return nullptr;
     };
 
     ResourceHandle<IGUIFontTextBlob> createTextBlob(const void* text, size_t byteLength, const IGUIFont* font, TextEncoding encoding = TextEncoding::kUTF8) override

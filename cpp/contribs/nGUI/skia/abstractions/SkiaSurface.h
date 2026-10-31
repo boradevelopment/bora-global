@@ -13,8 +13,8 @@
 class SkiaSurface : public IGUISurface
 {
 public:
-    explicit SkiaSurface(sk_sp<SkSurface> surface)
-        : m_skSurface(std::move(surface)), m_canvasWrapper()
+    explicit SkiaSurface(const UXRect& initialRect, sk_sp<SkSurface> surface)
+        : m_skSurface(std::move(surface)), m_canvasWrapper(), rect(initialRect)
     {
         if (m_skSurface)
         {
@@ -42,6 +42,70 @@ public:
         return true;
     }
 
+    bool PeekPixels(vec8& out) const override
+    {
+        if (!m_skSurface) {
+            return false;
+        }
+
+        SkPixmap pixmap;
+        if (m_skSurface->peekPixels(&pixmap)) {
+            const auto* rawPixels = static_cast<const uint8_t*>(pixmap.addr());
+            if (!rawPixels) {
+                return false;
+            }
+            size_t byteSize = pixmap.computeByteSize();
+
+            out.assign(rawPixels, rawPixels + byteSize);
+            return true;
+        }
+
+        return false;
+    }
+
+    [[nodiscard]] u32 GetRowBytes() const override
+    {
+        if (!m_skSurface) return 0;
+
+        SkPixmap pixmap;
+        if (m_skSurface->peekPixels(&pixmap))
+        {
+            return pixmap.rowBytes();
+        }
+
+        return 0;
+    }
+
+    [[nodiscard]] const u8* GetRawPixels() const override
+    {
+        if (!m_skSurface) return nullptr;
+
+        SkImageInfo info = m_skSurface->imageInfo();
+        size_t rowBytes = info.minRowBytes();
+
+
+        m_pixelCache.resize(info.height() * rowBytes);
+        if (m_skSurface->readPixels(info, m_pixelCache.data(), rowBytes, 0, 0))
+        {
+            return m_pixelCache.data();
+        }
+
+        return nullptr;
+    }
+
+    [[nodiscard]] size_t GetTotalByteSize() const override
+    {
+        if (!m_skSurface) return 0;
+
+        SkPixmap pixmap;
+        if (m_skSurface->peekPixels(&pixmap))
+        {
+            return pixmap.computeByteSize();
+        }
+
+        return 0;
+    }
+
     IGUICanvas* GetCanvas() override {
         return m_skSurface ? &m_canvasWrapper : nullptr;
     }
@@ -54,6 +118,19 @@ public:
         return m_skSurface ? m_skSurface->height() : 0;
     }
 
+    [[nodiscard]] UXRect GetRect() const override
+    {
+        return rect;
+    }
+
+    void SetRect(const UXRect& newRect) override {
+        rect = newRect;
+        auto canvas = GetCanvas();
+        canvas->Save();
+        canvas->Translate(static_cast<float>(rect.left), static_cast<float>(rect.top));
+        canvas->ClipRect(rect);
+    }
+
     [[nodiscard]] void* GetNativeHandle() const override {
         return static_cast<void*>(m_skSurface.get());
     }
@@ -61,4 +138,6 @@ public:
 private:
     sk_sp<SkSurface> m_skSurface;
     SkiaCanvas m_canvasWrapper;
+    UXRect rect;
+    mutable std::vector<u8> m_pixelCache;
 };

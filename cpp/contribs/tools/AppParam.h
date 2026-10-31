@@ -12,9 +12,9 @@
 #define CONCAT_HIDDEN(a, b) a ## b
 #define CONCAT(a, b) CONCAT_HIDDEN(a, b)
 
-#define REGISTER_PARAM_AD(key, aliases, description) static bool CONCAT(_reg_, __LINE__) = AppParam::registerParam(key, aliases, description);
-#define REGISTER_PARAM_A(key, aliases) static bool CONCAT(_reg_, __LINE__) = AppParam::registerParam(key, aliases);
-#define REGISTER_PARAM(key) static bool CONCAT(_reg_, __LINE__) = AppParam::registerParam(key);
+#define REGISTER_PARAM_AD(key, aliases, description) static bool CONCAT(_reg_, key) = AppParam::registerParam(#key, aliases, description);
+#define REGISTER_PARAM_A(key, aliases) static bool CONCAT(_reg_, key) = AppParam::registerParam(#key, aliases);
+#define REGISTER_PARAM(key) static bool CONCAT(_reg_, key) = AppParam::registerParam(#key);
 
 struct ParamMeta {
     std::string key;                  // e.g. "define"
@@ -59,8 +59,4 @@ public:
 private:
     static inline std::unordered_map<std::string, ParamMeta> params;
     static inline std::unordered_map<std::string, std::string> aliasMap;
-
-    static std::wstring toWString(const std::string& str) {
-        return std::wstring(str.begin(), str.end());
-    }
 };

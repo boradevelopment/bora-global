@@ -2,13 +2,14 @@
 // Check LICENSE.md for more information regarding the BORA license.
 #ifdef BORA_UI_SUPPORT
 #include "GUIRoot.h"
-
+#include "nWindow/bnWindow.h"
 
 IGUIRenderer* GUIRoot::createGPURenderer()
 {
     if (window->choice == VULKAN)
     {
-        return new SkiaVKRenderer(GPUContextManager::getGaneshContextForWindow(window), (bnGraphicsVK*)window->rootDevice);
+        windowRenderers.push_back(std::make_shared<SkiaVKRenderer>(GPUContextManager::getGaneshContextForWindow(window), (bnGraphicsVK*)window->rootDevice));
+        return windowRenderers.back().get();
     }
 #ifdef WIN32
     if (window->choice == D3D12)
@@ -16,8 +17,12 @@ IGUIRenderer* GUIRoot::createGPURenderer()
         return new
     }
 #endif
-
-    return nullptr;
+    // backwards-compatability - uses the Window mode CPU renderer if GPU doesn't support Skia backends.
+    if (!defaultCPURenderer)
+    {
+        defaultCPURenderer = std::make_shared<SkiaCPURenderer>(window);
+    }
+    return defaultCPURenderer.get();
 }
 
 #endif

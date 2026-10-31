@@ -2,11 +2,22 @@
 // Check LICENSE.md for more information regarding the BORA license.
 #include "DynamicLibrary.h"
 
+#include "StringUtils.h"
+#ifdef __linux__
+#include <dlfcn.h>
+#endif
+
 DynamicLibrary::DynamicLibrary(const wchar_t* path) : libraryHandle(nullptr) {
 #ifdef _WIN64
     libraryHandle = LoadLibraryW(path);
 #elif defined(__linux__)
-    libraryHandle = dlopen(path, RTLD_LAZY);
+    auto string = StringUtils::wstringToUtf8(path);
+    libraryHandle = dlopen(string.c_str(), RTLD_LAZY);
+    if (!libraryHandle) {
+        const char* error = dlerror();
+        // Log or print the error
+        fprintf(stderr, "Failed to load library %s: %s\n", string.c_str(), error ? error : "unknown error");
+    }
 #endif
 }
 
@@ -23,6 +34,7 @@ void* DynamicLibrary::getProcAddress(const char* procName) const {
 }
 
 void DynamicLibrary::close() {
+if (!libraryHandle) return;
 #ifdef _WIN64
     FreeLibrary(libraryHandle);
 #elif defined(__linux__)

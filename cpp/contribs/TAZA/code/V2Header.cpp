@@ -322,14 +322,11 @@ bool V2Header::writeV2HeaderToFile(const V2Header& header, FILE* outputFile, std
         return false;
     }
 
-    __int64 headerStart = 0;
-    __int64 headerEnd = 0;
+    i64 headerStart = 0;
+    i64 headerEnd = 0;
 
     // Mark the start of the V2Header
     headerStart = ftellout(outputFile);
-
-
-
     // Serialize V2Header metadata
     fwrite(wstringToUtf8(header.version).c_str(), sizeof(char), strlen(wstringToUtf8(header.version).c_str()) + 1, outputFile);
     fwrite(wstringToUtf8(header.file).c_str(), sizeof(char), strlen(wstringToUtf8(header.file).c_str()) + 1, outputFile);
@@ -392,7 +389,7 @@ bool V2Header::writeV2HeaderToFile(const V2Header& header, FILE* outputFile, std
 #endif
 }
 
-bool V2Header::readV2HeaderFromFile(std::ifstream& file, __int64 startPos, __int64 endPos)
+bool V2Header::readV2HeaderFromFile(std::ifstream& file, i64 startPos, i64 endPos)
 {
 #ifndef NOREAD
     file.exceptions(std::ifstream::failbit | std::ifstream::badbit);
@@ -408,7 +405,7 @@ bool V2Header::readV2HeaderFromFile(std::ifstream& file, __int64 startPos, __int
         std::getline(file, warning);
         this->warn = utf8ToWstring(warning);
 
-        __int64 dataSize = endPos - startPos;
+        i64 dataSize = endPos - startPos;
         if (dataSize <= 0) {
             std::cerr << "Invalid range specified!" << std::endl;
             return false;
@@ -587,6 +584,66 @@ bool V2Header::readV2FileFromFile(std::ifstream& file, V2File v2file, const char
     }
 
     return true;
+#endif
+}
+
+bool V2Header::getV2FileDirect(u8* data, std::ifstream& file, V2File v2file, const char* ivStr, const char* keyStr)
+{
+#if !NOREAD
+    try {
+        // Get the data
+        uint64_t liStart = v2file.lineStart;
+        uint64_t liEnd = v2file.lineEnd;
+        uint64_t properSize = liEnd - liStart;
+#ifdef DETAILEDLOGGING
+        TAZA_LOG_NORMAL(v2file.file + " Start Position:" + std::to_string(liStart));
+        TAZA_LOG_NORMAL(v2file.file + " End Position:" + std::to_string(liEnd));
+        TAZA_LOG_NORMAL(v2file.file + " Proper Size:" + std::to_string(properSize));
+#endif
+
+
+        file.seekg(liStart, std::ios::beg);
+        file.read(reinterpret_cast<char*>(data), v2file.size);
+        vec8 buffer = vec8(data, data+v2file.size);
+
+        if(v2file.encrypted){
+            printf("This is a very old version of TAZA, which was originally encrypted. This is not supported to fix cross platform issues \n");
+            return false;
+        }
+
+        if (v2file.compressedSize > 0) // if 0, its not compressed.
+        {
+            if (v2file.isCompressionChunked) {
+                decompress_memoryVChunk(buffer, v2file.compressionChunksSizes, v2file.regularsize);
+            }
+            else {
+                decompress_memoryV(buffer, v2file.regularsize);
+            }
+        }
+
+        return true;
+    }
+    catch (const std::ifstream::failure& e) {
+        std::cerr << "[TAZA] File I/O error: " << e.what() << std::endl;
+        return false;
+    }
+    catch (const std::invalid_argument& e) {
+        std::cerr << "[TAZA] Invalid argument: " << e.what() << std::endl;
+        return false;
+    }
+    catch (const std::runtime_error& e) {
+        std::cerr << "[TAZA] Runtime error: " << e.what() << std::endl;
+        return false;
+    }
+    catch (const std::exception& e) {
+        std::cerr << "[TAZA] Error: " << e.what() << std::endl;
+        return false;
+    }
+    catch (...) {
+        std::cerr << "[TAZA] Unknown error occurred!" << std::endl;
+        return false;
+    }
+
 #endif
 }
 

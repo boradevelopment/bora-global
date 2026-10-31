@@ -11,6 +11,14 @@ struct Color4f
 {
     float red = 0, green = 0, blue = 0;
     float alpha = 1;
+
+    Color4f(float red, float green, float blue, float alpha = 1) : red(red), green(green), blue(blue), alpha(alpha)
+    {
+        if (this->red > 1) this->red = this->red / 255;
+        if (this->green > 1) this->green = this->green / 255;
+        if (this->blue > 1) this->blue = this->blue / 255;
+        if (this->alpha > 1) this->alpha = this->alpha / 255;
+    }
 };
 struct GUIPaint {
     Color4f color{1.0f, 1.0f, 1.0f, 1.0f};

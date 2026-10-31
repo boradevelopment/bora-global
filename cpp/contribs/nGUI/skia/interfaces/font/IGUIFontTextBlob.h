@@ -18,7 +18,7 @@ public:
 
        @return  conservative bounding box
    */
-    virtual const UXRect& bounds() const = 0;
+    virtual const UXRect bounds() const = 0;
 
     /** Returns the number of intervals that intersect bounds.
         bounds describes a pair of lines parallel to the text advance.

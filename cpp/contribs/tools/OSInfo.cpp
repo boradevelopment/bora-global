@@ -9,7 +9,7 @@ const char* OSInfo::GetOSName()
     return "windows";
 #elif defined(__APPLE__)
     return "macos";
-#elif defined(__LINUX__)
-    return "linux"
+#elif defined(__linux__)
+    return "linux";
 #endif
 }

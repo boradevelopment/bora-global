@@ -58,7 +58,7 @@ struct V2Header {
     /// <param name="StartPos:">That starting offset of the header</param>
     /// <param name="EndPos:">The ending offset of the header</param>
     /// <returns>A boolean for success or not!</returns>
-    bool readV2HeaderFromFile(std::ifstream& file, __int64 startPos, __int64 endPos);
+    bool readV2HeaderFromFile(std::ifstream& file, i64 startPos, i64 endPos);
     /// <summary>
     /// Reads an V2File from the archive and turns it back into its original file inside of TZA_[file]
     /// </summary>
@@ -77,6 +77,17 @@ struct V2Header {
     /// <param name="KeyStr:">KEY for decryption</param>
     /// <returns>A vector containing bytes of data.</returns>
     std::vector<uint8_t> getV2File(std::ifstream& file, V2File v2file, const char* ivStr = "", const char* keyStr = "");
+    /// <summary>
+    /// Reads an V2File from the archive and returns its binary directly into a memory offset.
+    /// It assumes the dat
+    /// </summary>
+    /// <param name="data:">An u8* offset that is allocatde</param>
+    /// <param name="File:">An ifstream file</param>
+    /// <param name="V2file:">An v2file containing metadata</param>
+    /// <param name="IvStr:">IV for decryption</param>
+    /// <param name="KeyStr:">KEY for decryption</param>
+    /// <returns>A vector containing bytes of data.</returns>
+    bool getV2FileDirect(u8* data, std::ifstream& file, V2File v2file, const char* ivStr = "", const char* keyStr = "");
     /// <summary>
     /// Logs the V2Header
     /// </summary>

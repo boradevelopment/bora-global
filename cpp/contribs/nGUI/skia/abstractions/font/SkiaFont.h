@@ -106,7 +106,7 @@ public:
 
     // --- Measurement & Layout ---
     float measureText(const void* text, size_t byteLength, TextEncoding encoding,
-                      WindowRect* bounds, const GUIPaint* paint) const override {
+                      UXRect* bounds, const GUIPaint* paint) const override {
         auto skEncoding = static_cast<SkTextEncoding>(encoding);
         SkRect skBounds;
         const auto* skPaint = reinterpret_cast<const SkPaint*>(paint);
@@ -115,13 +115,13 @@ public:
                                                bounds ? &skBounds : nullptr, skPaint);
 
         if (bounds) {
-            *bounds = *reinterpret_cast<WindowRect*>(&skBounds);
+            *bounds = *reinterpret_cast<UXRect*>(&skBounds);
         }
         return static_cast<float>(advance);
     }
 
     void getWidthsBounds(std::span<const uint16_t> glyphs, std::span<float> widths,
-                         std::span<WindowRect> bounds, const GUIPaint* paint) const override {
+                         std::span<UXRect> bounds, const GUIPaint* paint) const override {
         auto skGlyphs = SkSpan(glyphs.data(), glyphs.size());
         int count = static_cast<int>(glyphs.size());
         SkSpan<float> skWidths = widths.empty() ? SkSpan<float>() : SkSpan(widths.data(), widths.size());

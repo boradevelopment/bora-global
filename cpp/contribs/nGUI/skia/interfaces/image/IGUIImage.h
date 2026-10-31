@@ -15,6 +15,7 @@ struct GUIImageSize;
 class IGUIImage
 {
 public:
+    virtual ~IGUIImage() = default;
     /** Returns a SkImageInfo describing the width, height, color type, alpha type, and color space
         of the SkImage.
 
@@ -26,19 +27,19 @@ public:
 
         @return  pixel width in SkImage
     */
-    virtual int width() const = 0;
+    [[nodiscard]] virtual int width() const = 0;
 
     /** Returns pixel row count.
 
         @return  pixel height in SkImage
     */
-    virtual int height() const = 0;
+    [[nodiscard]] virtual int height() const = 0;
 
     /** Returns SkISize { width(), height() }.
 
         @return  integral size of width() and height()
     */
-    virtual GUIImageSize dimensions() const = 0;
+    [[nodiscard]] virtual GUIImageSize dimensions() const = 0;
 
     /** Returns SkIRect { 0, 0, width(), height() }.
 
@@ -63,7 +64,7 @@ public:
 
         original docs: https://fiddle.skia.org/c/@Image_alphaType
     */
-    virtual ImageAlphaType alphaType() const = 0;;
+    virtual GUIImageAlphaType alphaType() const = 0;;
 
     /** Returns SkColorType if known; otherwise, returns kUnknown_SkColorType.
 
@@ -118,17 +119,17 @@ public:
     */
     virtual bool isOpaque() const = 0;
 
-    /**
-     *  Make a shader with the specified tiling and mipmap sampling.
-     */
-    ResourceHandle<IGUIShader> makeShader(GUITileMode tmx, GUITileMode tmy, const SkSamplingOptions&,
-                               const SkMatrix* localMatrix = nullptr) const;
-    ResourceHandle<IGUIShader> makeShader(SkTileMode tmx, SkTileMode tmy, const SkSamplingOptions& sampling,
-                               const SkMatrix& lm) const;
-    /** Defaults to clamp in both X and Y. */
-    ResourceHandle<IGUIShader> makeShader(const SkSamplingOptions& sampling, const SkMatrix& lm) const;
-    ResourceHandle<IGUIShader> makeShader(const SkSamplingOptions& sampling,
-                               const SkMatrix* lm = nullptr) const;
+    // /**
+    //  *  Make a shader with the specified tiling and mipmap sampling.
+    //  */
+    // ResourceHandle<IGUIShader> makeShader(GUITileMode tmx, GUITileMode tmy, const SkSamplingOptions&,
+    //                            const SkMatrix* localMatrix = nullptr) const;
+    // ResourceHandle<IGUIShader> makeShader(SkTileMode tmx, SkTileMode tmy, const SkSamplingOptions& sampling,
+    //                            const SkMatrix& lm) const;
+    // /** Defaults to clamp in both X and Y. */
+    // ResourceHandle<IGUIShader> makeShader(const SkSamplingOptions& sampling, const SkMatrix& lm) const;
+    // ResourceHandle<IGUIShader> makeShader(const SkSamplingOptions& sampling,
+    //                            const SkMatrix* lm = nullptr) const;
 
     /**
      *  makeRawShader functions like makeShader, but for images that contain non-color data.
@@ -143,14 +144,14 @@ public:
      *    - Bicubic filtering is not supported. If SkSamplingOptions::useCubic is true, these
      *      factories will return nullptr.
      */
-    sk_sp<SkShader> makeRawShader(SkTileMode tmx, SkTileMode tmy, const SkSamplingOptions&,
-                                  const SkMatrix* localMatrix = nullptr) const;
-    sk_sp<SkShader> makeRawShader(SkTileMode tmx, SkTileMode tmy, const SkSamplingOptions& sampling,
-                                  const SkMatrix& lm) const;
-    /** Defaults to clamp in both X and Y. */
-    sk_sp<SkShader> makeRawShader(const SkSamplingOptions& sampling, const SkMatrix& lm) const;
-    sk_sp<SkShader> makeRawShader(const SkSamplingOptions& sampling,
-                                  const SkMatrix* lm = nullptr) const;
+    // sk_sp<SkShader> makeRawShader(SkTileMode tmx, SkTileMode tmy, const SkSamplingOptions&,
+    //                               const SkMatrix* localMatrix = nullptr) const;
+    // sk_sp<SkShader> makeRawShader(SkTileMode tmx, SkTileMode tmy, const SkSamplingOptions& sampling,
+    //                               const SkMatrix& lm) const;
+    // /** Defaults to clamp in both X and Y. */
+    // sk_sp<SkShader> makeRawShader(const SkSamplingOptions& sampling, const SkMatrix& lm) const;
+    // sk_sp<SkShader> makeRawShader(const SkSamplingOptions& sampling,
+    //                               const SkMatrix* lm = nullptr) const;
 
     /** Copies SkImage pixel address, row bytes, and SkImageInfo to pixmap, if address
         is available, and returns true. If pixel address is not available, return
@@ -292,13 +293,13 @@ public:
                     int srcY,
                     CachingHint cachingHint = kAllow_CachingHint) const;
 
-#ifndef SK_IMAGE_READ_PIXELS_DISABLE_LEGACY_API
-    /** Deprecated. Use the variants that accept a GrDirectContext. */
-    bool readPixels(const SkImageInfo& dstInfo, void* dstPixels, size_t dstRowBytes,
-                    int srcX, int srcY, CachingHint cachingHint = kAllow_CachingHint) const;
-    bool readPixels(const SkPixmap& dst, int srcX, int srcY,
-                    CachingHint cachingHint = kAllow_CachingHint) const;
-#endif
+// #ifndef SK_IMAGE_READ_PIXELS_DISABLE_LEGACY_API
+//     /** Deprecated. Use the variants that accept a GrDirectContext. */
+//     bool readPixels(const SkImageInfo& dstInfo, void* dstPixels, size_t dstRowBytes,
+//                     int srcX, int srcY, CachingHint cachingHint = kAllow_CachingHint) const;
+//     bool readPixels(const SkPixmap& dst, int srcX, int srcY,
+//                     CachingHint cachingHint = kAllow_CachingHint) const;
+// #endif
 
     /** The result from asyncRescaleAndReadPixels() or asyncRescaleAndReadPixelsYUV420(). */
     class AsyncReadResult {
@@ -519,9 +520,9 @@ public:
         @param RequiredProperties  properties the returned SkImage must possess (e.g. mipmaps)
         @return                    the subsetted image, or nullptr
     */
-    virtual sk_sp<SkImage> makeSubset(SkRecorder*,
-                                      const SkIRect& subset,
-                                      RequiredProperties) const = 0;
+    // virtual sk_sp<SkImage> makeSubset(SkRecorder*,
+    //                                   const SkIRect& subset,
+    //                                   RequiredProperties) const = 0;
 
     /**
      *  Returns true if the image has mipmap levels.
@@ -533,115 +534,115 @@ public:
      */
     bool isProtected() const;
 
-    /**
-     *  Returns an image with the same "base" pixels as the this image, but with mipmap levels
-     *  automatically generated and attached.
-     */
-    sk_sp<SkImage> withDefaultMipmaps() const;
+//     /**
+//      *  Returns an image with the same "base" pixels as the this image, but with mipmap levels
+//      *  automatically generated and attached.
+//      */
+//     sk_sp<SkImage> withDefaultMipmaps() const;
+//
+//     /** Returns raster image or lazy image. Copies SkImage backed by GPU texture into
+//         CPU memory if needed. Returns original SkImage if decoded in raster bitmap,
+//         or if encoded in a stream.
+//
+//         Returns nullptr if backed by GPU texture and copy fails.
+//
+//         @return  raster image, lazy image, or nullptr
+//
+//         example: https://fiddle.skia.org/c/@Image_makeNonTextureImage
+//     */
+//     sk_sp<SkImage> makeNonTextureImage(GrDirectContext* = nullptr) const;
+//
+//     /** Returns raster image. Copies SkImage backed by GPU texture into CPU memory,
+//         or decodes SkImage from lazy image. Returns original SkImage if decoded in
+//         raster bitmap.
+//
+//         Returns nullptr if copy, decode, or pixel read fails.
+//
+//         If cachingHint is kAllow_CachingHint, pixels may be retained locally.
+//         If cachingHint is kDisallow_CachingHint, pixels are not added to the local cache.
+//
+//         @return  raster image, or nullptr
+//
+//         example: https://fiddle.skia.org/c/@Image_makeRasterImage
+//     */
+//     sk_sp<SkImage> makeRasterImage(GrDirectContext*,
+//                                    CachingHint cachingHint = kDisallow_CachingHint) const;
 
-    /** Returns raster image or lazy image. Copies SkImage backed by GPU texture into
-        CPU memory if needed. Returns original SkImage if decoded in raster bitmap,
-        or if encoded in a stream.
-
-        Returns nullptr if backed by GPU texture and copy fails.
-
-        @return  raster image, lazy image, or nullptr
-
-        example: https://fiddle.skia.org/c/@Image_makeNonTextureImage
-    */
-    sk_sp<SkImage> makeNonTextureImage(GrDirectContext* = nullptr) const;
-
-    /** Returns raster image. Copies SkImage backed by GPU texture into CPU memory,
-        or decodes SkImage from lazy image. Returns original SkImage if decoded in
-        raster bitmap.
-
-        Returns nullptr if copy, decode, or pixel read fails.
-
-        If cachingHint is kAllow_CachingHint, pixels may be retained locally.
-        If cachingHint is kDisallow_CachingHint, pixels are not added to the local cache.
-
-        @return  raster image, or nullptr
-
-        example: https://fiddle.skia.org/c/@Image_makeRasterImage
-    */
-    sk_sp<SkImage> makeRasterImage(GrDirectContext*,
-                                   CachingHint cachingHint = kDisallow_CachingHint) const;
-
-#if !defined(SK_IMAGE_READ_PIXELS_DISABLE_LEGACY_API)
-    sk_sp<SkImage> makeRasterImage(CachingHint cachingHint = kDisallow_CachingHint) const {
-        return this->makeRasterImage(nullptr, cachingHint);
-    }
-#endif
-
-    /** Deprecated.
-     */
-    enum LegacyBitmapMode {
-        kRO_LegacyBitmapMode, //!< returned bitmap is read-only and immutable
-    };
-
-    /** Deprecated.
-        Creates raster SkBitmap with same pixels as SkImage. If legacyBitmapMode is
-        kRO_LegacyBitmapMode, returned bitmap is read-only and immutable.
-        Returns true if SkBitmap is stored in bitmap. Returns false and resets bitmap if
-        SkBitmap write did not succeed.
-
-        @param bitmap            storage for legacy SkBitmap
-        @param legacyBitmapMode  bitmap is read-only and immutable
-        @return                  true if SkBitmap was created
-    */
-    bool asLegacyBitmap(SkBitmap* bitmap,
-                        LegacyBitmapMode legacyBitmapMode = kRO_LegacyBitmapMode) const;
-
-    /** Returns true if SkImage is backed by an image-generator or other service that creates
-        and caches its pixels or texture on-demand.
-
-        @return  true if SkImage is created as needed
-
-        example: https://fiddle.skia.org/c/@Image_isLazyGenerated_a
-        example: https://fiddle.skia.org/c/@Image_isLazyGenerated_b
-    */
-    virtual bool isLazyGenerated() const = 0;
-
-    /** Creates SkImage in target SkColorSpace.
-        Returns nullptr if SkImage could not be created.
-
-        Returns original SkImage if it is in target SkColorSpace.
-        Otherwise, converts pixels from SkImage SkColorSpace to target SkColorSpace.
-        If SkImage colorSpace() returns nullptr, SkImage SkColorSpace is assumed to be sRGB.
-
-        If this image is graphite-backed, the recorder parameter is required.
-
-        @param targetColorSpace    SkColorSpace describing color range of returned SkImage
-        @param recorder            The Recorder in which to create the new image
-        @param RequiredProperties  properties the returned SkImage must possess (e.g. mipmaps)
-        @return                    created SkImage in target SkColorSpace
-    */
-    virtual sk_sp<SkImage> makeColorSpace(SkRecorder*,
-                                          sk_sp<SkColorSpace> targetColorSpace,
-                                          RequiredProperties) const = 0;
-
-    /** Experimental.
-        Creates SkImage in target SkColorType and SkColorSpace.
-        Returns nullptr if SkImage could not be created.
-
-        Returns original SkImage if it is in target SkColorType and SkColorSpace.
-
-        If this image is graphite-backed, the recorder parameter is required.
-
-        @param targetColorType     SkColorType of returned SkImage
-        @param targetColorSpace    SkColorSpace of returned SkImage
-        @param recorder            The Recorder in which to create the new image
-        @param RequiredProperties  properties the returned SkImage must possess (e.g. mipmaps)
-        @return                    created SkImage in target SkColorType and SkColorSpace
-    */
-    virtual sk_sp<SkImage> makeColorTypeAndColorSpace(SkRecorder*,
-                                                      SkColorType targetColorType,
-                                                      sk_sp<SkColorSpace> targetColorSpace,
-                                                      RequiredProperties) const = 0;
-
-    /** Creates a new SkImage identical to this one, but with a different SkColorSpace.
-        This does not convert the underlying pixel data, so the resulting image will draw
-        differently.
-    */
-    sk_sp<SkImage> reinterpretColorSpace(sk_sp<SkColorSpace> newColorSpace) const;
+// #if !defined(SK_IMAGE_READ_PIXELS_DISABLE_LEGACY_API)
+//     sk_sp<SkImage> makeRasterImage(CachingHint cachingHint = kDisallow_CachingHint) const {
+//         return this->makeRasterImage(nullptr, cachingHint);
+//     }
+// #endif
+//
+//     /** Deprecated.
+//      */
+//     enum LegacyBitmapMode {
+//         kRO_LegacyBitmapMode, //!< returned bitmap is read-only and immutable
+//     };
+//
+//     /** Deprecated.
+//         Creates raster SkBitmap with same pixels as SkImage. If legacyBitmapMode is
+//         kRO_LegacyBitmapMode, returned bitmap is read-only and immutable.
+//         Returns true if SkBitmap is stored in bitmap. Returns false and resets bitmap if
+//         SkBitmap write did not succeed.
+//
+//         @param bitmap            storage for legacy SkBitmap
+//         @param legacyBitmapMode  bitmap is read-only and immutable
+//         @return                  true if SkBitmap was created
+//     */
+//     bool asLegacyBitmap(SkBitmap* bitmap,
+//                         LegacyBitmapMode legacyBitmapMode = kRO_LegacyBitmapMode) const;
+//
+//     /** Returns true if SkImage is backed by an image-generator or other service that creates
+//         and caches its pixels or texture on-demand.
+//
+//         @return  true if SkImage is created as needed
+//
+//         example: https://fiddle.skia.org/c/@Image_isLazyGenerated_a
+//         example: https://fiddle.skia.org/c/@Image_isLazyGenerated_b
+//     */
+//     virtual bool isLazyGenerated() const = 0;
+//
+//     /** Creates SkImage in target SkColorSpace.
+//         Returns nullptr if SkImage could not be created.
+//
+//         Returns original SkImage if it is in target SkColorSpace.
+//         Otherwise, converts pixels from SkImage SkColorSpace to target SkColorSpace.
+//         If SkImage colorSpace() returns nullptr, SkImage SkColorSpace is assumed to be sRGB.
+//
+//         If this image is graphite-backed, the recorder parameter is required.
+//
+//         @param targetColorSpace    SkColorSpace describing color range of returned SkImage
+//         @param recorder            The Recorder in which to create the new image
+//         @param RequiredProperties  properties the returned SkImage must possess (e.g. mipmaps)
+//         @return                    created SkImage in target SkColorSpace
+//     */
+//     virtual sk_sp<SkImage> makeColorSpace(SkRecorder*,
+//                                           sk_sp<SkColorSpace> targetColorSpace,
+//                                           RequiredProperties) const = 0;
+//
+//     /** Experimental.
+//         Creates SkImage in target SkColorType and SkColorSpace.
+//         Returns nullptr if SkImage could not be created.
+//
+//         Returns original SkImage if it is in target SkColorType and SkColorSpace.
+//
+//         If this image is graphite-backed, the recorder parameter is required.
+//
+//         @param targetColorType     SkColorType of returned SkImage
+//         @param targetColorSpace    SkColorSpace of returned SkImage
+//         @param recorder            The Recorder in which to create the new image
+//         @param RequiredProperties  properties the returned SkImage must possess (e.g. mipmaps)
+//         @return                    created SkImage in target SkColorType and SkColorSpace
+//     */
+//     virtual sk_sp<SkImage> makeColorTypeAndColorSpace(SkRecorder*,
+//                                                       SkColorType targetColorType,
+//                                                       sk_sp<SkColorSpace> targetColorSpace,
+//                                                       RequiredProperties) const = 0;
+//
+//     /** Creates a new SkImage identical to this one, but with a different SkColorSpace.
+//         This does not convert the underlying pixel data, so the resulting image will draw
+//         differently.
+//     */
+//     sk_sp<SkImage> reinterpretColorSpace(sk_sp<SkColorSpace> newColorSpace) const;
 };

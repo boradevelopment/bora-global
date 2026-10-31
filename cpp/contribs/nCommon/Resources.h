@@ -16,22 +16,29 @@ enum ResourceStatus {
     TO_BE_DESTROYED = 4,
 };
 
+#pragma clang diagnostic push
+#pragma clang diagnostic ignored "-Wdelete-incomplete"
 template<typename T>
 class ResourceHandle : public IResourceHandle {
     T* resource = nullptr;
     T* prevResource = nullptr;
+    bool owned;
 public:
-    ResourceHandle() : resource(nullptr), prevResource(nullptr) {
+    ResourceStatus status = ResourceStatus::NOTHING;
+
+    ResourceHandle() : resource(nullptr), prevResource(nullptr), owned(true) {
 
     }
 
-    ResourceHandle(T* res) {
+    ResourceHandle(T* res, bool owned = true) : owned(owned) {
         Resolve(res);
     }
 
-    ResourceStatus status = ResourceStatus::NOTHING;
-    void Resolve(T* res) {
-        if (resource) {
+    void Resolve(T* res, bool owned = true) {
+        if (res == nullptr) return;
+        this->owned = owned;
+
+        if (resource && this->owned) {
             delete resource;
             resource = nullptr;
         }
@@ -82,11 +89,17 @@ public:
         }
     }
 
+
     void Release() override {
         status = DESTROYED;
         if (resource) {
-            delete resource;
+            if constexpr (!std::is_same_v<std::remove_cv_t<T>, void*>)
+            {
+                delete resource;
+            }
             resource = nullptr;
         }
     }
+
 };
+#pragma clang diagnostic pop

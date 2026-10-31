@@ -13,12 +13,12 @@
 class SkiaFontTextBlob : public IGUIFontTextBlob
 {
 public:
-    const UXRect& bounds() const override
+    const UXRect bounds() const override
     {
         if (blob_)
         {
             auto bound = blob_->bounds();
-            return { bound.left, bound.top, bound.right, bound.bottom };
+            return { bound.left(), bound.top(), bound.right(), bound.bottom() };
         }
 
         return {};
@@ -81,7 +81,7 @@ public:
                              TextEncoding encoding = TextEncoding::kUTF8) : SkiaFontTextBlob(string, string ? strlen(string) : 0, font, encoding)
     {
         auto skEncoding = static_cast<SkTextEncoding>(encoding);
-        blob_ = SkTextBlob::MakeFromText(text, byteLength, *((SkFont*)font->GetNativeHandle()), skEncoding);
+        blob_ = SkTextBlob::MakeFromText(string, strlen(string), *((SkFont*)font->GetNativeHandle()), skEncoding);
     }
 
     /** Returns a textblob built from a single run of text with x-positions and a single y value.

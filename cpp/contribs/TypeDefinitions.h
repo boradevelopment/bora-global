@@ -1,10 +1,13 @@
 // This is used for the entirity of BORA C++ Source.
 #pragma once
 #if defined(__cplusplus)
+
 #include <climits> // For integer limits
 #include <cfloat>  // For FLT_MAX
 #include "logging/LogManager.h"
 #include "logging/LogStream.h"
+#include <filesystem>
+namespace fs = std::filesystem;
 #if __APPLE__
 typedef signed long int __int64;
 #endif
@@ -47,6 +50,7 @@ using sVec = std::vector<T>;
 template<typename T, typename V>
 using sMap = std::map<T, V>;
 
+
 template<typename T, typename V>
 using sUnorderedMap = std::unordered_map<T, V>;
 
@@ -59,12 +63,14 @@ using sUniquePointer = std::unique_ptr<T>;
 typedef std::string sString;
 typedef std::wstring sWstring;
 typedef sVec<u8> vec8;
+
 typedef vec8 byteVector;
 
 #define tUnlimited std::numeric_limits<size_t>::max()
 
-// Graphics Related
 
+
+// Graphics Related
 struct rgb;
 struct rgba;
 
@@ -145,7 +151,6 @@ typedef void* SysHandle;
 typedef void* DynLibraryHandle;
 #elif defined(__linux__)
 #if defined(BORA_HAS_WAYLAND) || defined(BORA_HAS_X11)
-// nuisiance
 #if defined(Always)
 #undef Always
 #endif

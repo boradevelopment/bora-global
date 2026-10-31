@@ -3,6 +3,7 @@
 #ifdef BORA_UI_SUPPORT
 #include "GPUContextManager.h"
 
+#include "common/SkiaOGLContextCreator.h"
 #include "common/SkiaVKContextCreator.h"
 #include "common/SkiaVKRenderer.h"
 #include "nWindow/bnWindow.h"
@@ -16,6 +17,11 @@ sk_sp<GrDirectContext> GPUContextManager::getGaneshHeadlessContext() {
 
 sk_sp<GrDirectContext> GPUContextManager::getGaneshContextForWindow(const bnWindow *window) {
     if (!window) return nullptr;
+
+    if (windowContexts[window->handle]) {
+        return windowContexts[window->handle];
+    }
+
 #ifdef WIN32
     if (window->choice == D3D12) {
         if (windowContexts[window->handle]) {
@@ -38,16 +44,20 @@ sk_sp<GrDirectContext> GPUContextManager::getGaneshContextForWindow(const bnWind
     }
 #endif
 
+#ifdef BORA_HAS_VULKAN
     if (window->choice == VULKAN)
     {
-        if (windowContexts[window->handle]) {
-            return windowContexts[window->handle];
-        } else {
-            windowContexts[window->handle] = SkiaVKContextCreator::createContextFromWindow(window);
-            return windowContexts[window->handle];
-        }
+        windowContexts[window->handle] = SkiaVKContextCreator::createContextFromWindow(window);
+        return windowContexts[window->handle];
     }
-
+#endif
+#ifdef BORA_HAS_OPENGL
+    if (window->choice == OPENGL)
+    {
+        windowContexts[window->handle] = SkiaOGLontextCreator::createContextFromWindow(window);
+        return windowContexts[window->handle];
+    }
+#endif
 
     return nullptr;
 }

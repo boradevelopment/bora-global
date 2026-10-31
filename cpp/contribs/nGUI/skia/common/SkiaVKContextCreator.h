@@ -1,5 +1,6 @@
 #pragma once
 #if defined(BORA_UI_SUPPORT) && defined(BORA_HAS_VULKAN)
+#include <include/gpu/vk/VulkanExtensions.h>
 #include <vulkan/vulkan.h>
 #include "nGUI/skia/interfaces/GUISkiaSysInfo.h"
 
@@ -15,5 +16,7 @@ public:
     uint32_t                         fMaxAPIVersion = 0);
 
     static sk_sp<GrDirectContext> createContextFromWindow(const bnWindow* window);
+
+    static inline sUnorderedMap<sWstring, skgpu::VulkanExtensions*> extensions;
 };
 #endif

@@ -45,7 +45,7 @@ struct ShaderReflection {
 
 struct BinaryShaderResult {
     GraphicsChoice type;
-    u8* data;
+    sVec<u8> data;
     size_t size;
 };
 
@@ -53,15 +53,18 @@ class bnShader
 {
 public:
     bnShader(IShader* shader);
+    bnShader(ShaderDesc::Type type, const char* filePath);
     bnShader(ShaderDesc::Type type, u8* spvData, size_t size);
     bnShader(ShaderDesc::Type, u32* spvData, size_t size);
     ~bnShader();
 public:
-    BinaryShaderResult* GetBinary(GraphicsChoice type);
     ShaderReflection getReflection();
+    ResourceHandle<BinaryShaderResult> GetBinary(GraphicsChoice type);
+    ResourceHandle<IShader> getShader(IGraphicsDevice* rootDevice, GraphicsChoice choice);
 private:
     sVec<u32> data;
     ShaderDesc::Type type;
+    bool LoadFromFile(const char* filePath);
 };
 #endif
 

@@ -24,7 +24,7 @@
 // I'm not so sure if OSX has a native SVG rasterizer as well and for linux as well, but if they don't.
 // I would just use skia rasterization anyway.
 enum RasterizationBackend {
-    OS_RASTERIZATION, // OS Supported rasterizers
+    // OS_RASTERIZATION, // OS Supported rasterizers
     SKIA_RASTERIZATION_CPU, // CPU based Rasterization on skia's end for simple things
     SKIA_RASTERIZATION_GPU // GPU based Rasterization on skia's end for more demanding things
 };
@@ -75,35 +75,35 @@ public:
     );
 private:
     static RasterizationBackend getBestBackend(RasterizationPolicy policy, const u8* svgData, size_t svgSize);
-#ifdef _WIN64
-    inline  static D3D_FEATURE_LEVEL d3dFeatureLevel;
-    inline static Microsoft::WRL::ComPtr<ID3D11Device> device;
-    inline static Microsoft::WRL::ComPtr<ID3D11DeviceContext> context;
-    inline static Microsoft::WRL::ComPtr<ID3D11Device2>           d3dDevice;
-    inline static Microsoft::WRL::ComPtr<ID3D11DeviceContext3>    d3dContext;
-    inline static Microsoft::WRL::ComPtr<IDXGIDevice> dxgiDevice;
-    inline static Microsoft::WRL::ComPtr<ID2D1Device5>            d2dDevice;
-    inline static Microsoft::WRL::ComPtr<ID2D1DeviceContext5>     d2dContext;
-    inline static Microsoft::WRL::ComPtr<ID2D1Factory6> factory;
-
-    static bool D2DVectorSVGLoader(
-        const uint8_t *data,
-        size_t size,
-        UINT width,
-        UINT height, std::vector<u8> &pngData
-    );
-#endif
+// #ifdef _WIN64
+//     inline  static D3D_FEATURE_LEVEL d3dFeatureLevel;
+//     inline static Microsoft::WRL::ComPtr<ID3D11Device> device;
+//     inline static Microsoft::WRL::ComPtr<ID3D11DeviceContext> context;
+//     inline static Microsoft::WRL::ComPtr<ID3D11Device2>           d3dDevice;
+//     inline static Microsoft::WRL::ComPtr<ID3D11DeviceContext3>    d3dContext;
+//     inline static Microsoft::WRL::ComPtr<IDXGIDevice> dxgiDevice;
+//     inline static Microsoft::WRL::ComPtr<ID2D1Device5>            d2dDevice;
+//     inline static Microsoft::WRL::ComPtr<ID2D1DeviceContext5>     d2dContext;
+//     inline static Microsoft::WRL::ComPtr<ID2D1Factory6> factory;
+//
+//     static bool D2DVectorSVGLoader(
+//         const uint8_t *data,
+//         size_t size,
+//         UINT width,
+//         UINT height, std::vector<u8> &pngData
+//     );
+// #endif
 
     static SvgFeatures inspectSVG(const u8* data, size_t size);
 
-    static bool supportsOSRasterization()
-    {
-#ifdef _WIN64
-        return true; // Direct2D SVG supported (Win10+)
-#else
-        return false;
-#endif
-    }
+//     static bool supportsOSRasterization()
+//     {
+// #ifdef _WIN64
+//         return true; // Direct2D SVG supported (Win10+)
+// #else
+//         return false;
+// #endif
+//     }
 
     // todo: add something better than this
     static bool supportsSkiaGPU()

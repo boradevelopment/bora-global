@@ -1,5 +1,30 @@
 #include "bnShader.h"
 #ifdef BORA_USE_SPIRV
+
+bnShader::bnShader(ShaderDesc::Type shaderType, const char* filePath)
+    : type(shaderType)
+{
+    if (!LoadFromFile(filePath)) {
+        // Handle error (e.g., log assertion or empty data)
+    }
+}
+
+bool bnShader::LoadFromFile(const char* filePath)
+{
+    std::ifstream file(filePath, std::ios::ate | std::ios::binary);
+    if (!file.is_open()) return false;
+
+    size_t fileSize = (size_t)file.tellg();
+    file.seekg(0, std::ios::beg);
+
+    // SPIR-V bytecode expects 4-byte alignment, so resize data as u32 chunks
+    data.resize((fileSize + 3) / 4);
+    file.read(reinterpret_cast<char*>(data.data()), fileSize);
+    file.close();
+
+    return true;
+}
+
 bnShader::bnShader(IShader* shader)
 {
     type = shader->type;
@@ -34,8 +59,7 @@ bnShader::bnShader(ShaderDesc::Type type, u32* spvData, size_t size) : type(type
 }
 
 bnShader::~bnShader()
-{
-}
+= default;
 
 IShaderStage DetectStage(const spirv_cross::Compiler& compiler) {
     const auto& entryPoints = compiler.get_entry_points_and_stages();
@@ -92,18 +116,20 @@ TextureFormat DeduceFormat(const spirv_cross::SPIRType& type) {
     return TextureFormat::Unknown;
 }
 
-BinaryShaderResult* bnShader::GetBinary(GraphicsChoice type)
+ResourceHandle<BinaryShaderResult> bnShader::GetBinary(GraphicsChoice type)
 {
     auto result = new BinaryShaderResult();
     result->type = type;
 
     switch (result->type)
     {
-    case GraphicsChoice::VULKAN: {
-        result->data = reinterpret_cast<u8*>(data.data());
-        result->size = data.size();
-        break;
-    }
+        case GraphicsChoice::VULKAN: {
+            result->size = data.size() * sizeof(u32);
+            result->data.resize(result->size);
+
+            memcpy(result->data.data(), data.data(), result->size);
+            break;
+        }
     case GraphicsChoice::D3D11: {
 #ifdef WIN32
         spirv_cross::CompilerHLSL compiler(data);
@@ -128,7 +154,10 @@ BinaryShaderResult* bnShader::GetBinary(GraphicsChoice type)
     case GraphicsChoice::OPENGL: {
         spirv_cross::CompilerGLSL compiler(data);
         std::string source = compiler.compile();
-        // add opengl compile code here.
+
+        result->size = source.size();
+        result->data.resize(result->size + 1);
+        memcpy(result->data.data(), source.data(), result->size);
         break;
     }
     }
@@ -212,4 +241,19 @@ ShaderReflection bnShader::getReflection()
 
     return refl;
 }
+
+ResourceHandle<IShader> bnShader::getShader(IGraphicsDevice* rootDevice, GraphicsChoice choice)
+{
+    if (!rootDevice || data.empty()) return {};
+    auto binary = GetBinary(choice);
+
+    ShaderDesc desc{};
+    desc.type = type;
+    desc.bytecode = binary->data.data();
+    desc.bytecodeSize = binary->size;
+
+    ResourceHandle handle = rootDevice->CreateShader(desc);
+    return handle;
+}
+
 #endif
