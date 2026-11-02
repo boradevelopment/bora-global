@@ -604,8 +604,8 @@ bool V2Header::getV2FileDirect(u8* data, std::ifstream& file, V2File v2file, con
 
         file.seekg(liStart, std::ios::beg);
         file.read(reinterpret_cast<char*>(data), v2file.size);
-        vec8 buffer = vec8(data, data+v2file.size);
 
+        vec8 buffer = vec8(data, data+v2file.size);
         if(v2file.encrypted){
             printf("This is a very old version of TAZA, which was originally encrypted. This is not supported to fix cross platform issues \n");
             return false;
@@ -613,12 +613,14 @@ bool V2Header::getV2FileDirect(u8* data, std::ifstream& file, V2File v2file, con
 
         if (v2file.compressedSize > 0) // if 0, its not compressed.
         {
-            if (v2file.isCompressionChunked) {
-                decompress_memoryVChunk(buffer, v2file.compressionChunksSizes, v2file.regularsize);
+            vec8 output = (v2file.isCompressionChunked)
+          ? decompress_memoryVChunk(buffer, v2file.compressionChunksSizes, v2file.regularsize)
+          : decompress_memoryV(buffer, v2file.regularsize);
+
+            if (output.size() != v2file.regularsize) {
+                throw std::runtime_error("Decompressed size mismatch");
             }
-            else {
-                decompress_memoryV(buffer, v2file.regularsize);
-            }
+            std::memcpy(data, output.data(), output.size());
         }
 
         return true;
@@ -677,10 +679,10 @@ std::vector<uint8_t> V2Header::getV2File(std::ifstream& file, V2File v2file, con
         if (v2file.compressedSize > 0) // if 0, its not compressed.
         {
             if (v2file.isCompressionChunked) {
-                decompress_memoryVChunk(buffer, v2file.compressionChunksSizes, v2file.regularsize);
+                buffer = std::move(decompress_memoryVChunk(buffer, v2file.compressionChunksSizes, v2file.regularsize));
             }
             else {
-                decompress_memoryV(buffer, v2file.regularsize);
+               buffer = std::move(decompress_memoryV(buffer, v2file.regularsize));
             }
         }
         
